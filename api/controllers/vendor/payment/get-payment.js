@@ -96,6 +96,8 @@ module.exports = {
       }
     }
 
+    console.log(orderTerm);
+
     const vendorPaymentCount = await VendorPayment.count({
       where: vendorPaymentSearch,
       offset: limit * (page - 1),

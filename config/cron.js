@@ -7,7 +7,7 @@ module.exports.cron = {
     schedule: '*/15 * * * *',
     onTick: function () {
       let wstream = fs.createWriteStream('../backup/saryin_backup.sql');
-      console.log(' cron: ', 'Running Database Backup Midnight');
+      console.log(' cron: ', 'Running Database Backup');
       let mysqldump = spawn('mysqldump', [
         '-u',
         local.MYSQL_USERNAME,

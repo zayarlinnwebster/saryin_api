@@ -1,4 +1,4 @@
-const { Op } = require('sequelize');
+const { Op, literal } = require('sequelize');
 
 module.exports = {
 
@@ -82,7 +82,7 @@ module.exports = {
       ],
     };
 
-    if (column && direction) {
+    if (column && direction && column !== 'invoiceDate' && column !== 'vendor.vendorName') {
       orderTerm = [[column, direction.toUpperCase()]];
     }
 
@@ -103,6 +103,9 @@ module.exports = {
         'paidAmount',
         'transactionNo',
         'paymentDate',
+        [literal('(SELECT SUM(`CustomerPayment`.`paid_amount`) FROM `customer_payment` AS `CustomerPayment` WHERE `CustomerPayment`.`customer_id` = `customer`.`id` AND (DATE(`payment_date`) >= \'' + fromDate + '\' AND DATE(`payment_date`) <= \'' + toDate + '\'))'), 'totalPaidAmount'],
+        // eslint-disable-next-line quotes
+        [literal("(SELECT SUM(`Invoice`.`total_amount`) FROM `invoice` AS `Invoice` WHERE `Invoice`.`customer_id` = `customer`.`id` AND (DATE(`invoice_date`) >= '" + fromDate + "' AND DATE(`invoice_date`) <= '" + toDate + "'))"), 'totalInvoiceAmount'],
       ],
       where: paymentSearch,
       offset: limit * (page - 1),

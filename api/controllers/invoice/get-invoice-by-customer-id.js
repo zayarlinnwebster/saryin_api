@@ -96,7 +96,7 @@ module.exports = {
       ],
     };
 
-    if (column && direction) {
+    if (column && direction && column !== 'paymentDate') {
       if (column.indexOf('vendor') !== -1) {
         orderTerm = [[{ model: Vendor, as: 'vendor' }, column.substr(column.indexOf('.') + 1), direction.toUpperCase()]];
       } else {

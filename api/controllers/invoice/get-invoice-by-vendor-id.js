@@ -96,7 +96,7 @@ module.exports = {
       ],
     };
 
-    if (column && direction) {
+    if (column && direction && column !== 'paymentDate') {
       if (column.indexOf('customer') !== -1) {
         orderTerm = [[{ model: Customer, as: 'customer' }, column.substr(column.indexOf('.') + 1), direction.toUpperCase()]];
       } else {
