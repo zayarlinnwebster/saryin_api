@@ -66,6 +66,48 @@ module.exports = {
       },
     },
 
+    remainingAmount: {
+      type: DECIMAL(19, 2).UNSIGNED,
+      allowNull: false,
+      validate: {
+        notEmpty: {
+          args: true,
+          msg: 'remainingAmount cannot be empty'
+        },
+        notNull: {
+          args: true,
+          msg: 'remainingAmount must be required'
+        },
+        min: {
+          args: [0],
+          msg: 'remainingAmount must be greater than or equal to 0',
+        },
+      }
+    },
+
+    commission: {
+      type: DECIMAL(5, 2).UNSIGNED,
+      allowNull: false,
+      validate: {
+        notEmpty: {
+          args: true,
+          msg: 'commission cannot be empty'
+        },
+        notNull: {
+          args: true,
+          msg: 'commission must be required'
+        },
+        min: {
+          args: [0],
+          msg: 'commission must be greater than or equal to 0',
+        },
+        max: {
+          args: [100],
+          msg: 'commission must be less than or equal to 100',
+        },
+      }
+    },
+
   },
 
   associations: function () {

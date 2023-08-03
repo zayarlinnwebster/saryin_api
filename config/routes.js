@@ -96,6 +96,9 @@ module.exports.routes = {
   'GET /api/v1/store/:id/usage': {
     action: 'store/get-store-usage-by-id'
   },
+  'GET /api/v1/store/:id/item': {
+    action: 'store/get-store-item'
+  },
 
   // Stock Item Routes
   'POST /api/v1/store/stock-item/': {
@@ -109,6 +112,9 @@ module.exports.routes = {
   },
   'GET /api/v1/store/stock-item/': {
     action: 'store/stock-item/get-stock-item'
+  },
+  'GET /api/v1/store/stock-item/export': {
+    action: 'store/stock-item/export-stock-item'
   },
 
   // Stock Item Out Routes
@@ -141,8 +147,8 @@ module.exports.routes = {
   'GET /api/v1/customer/:id': {
     action: 'customer/get-customer-by-id'
   },
-  'GET /api/v1/customer/:id/invoice': {
-    action: 'invoice/get-invoice-by-customer-id'
+  'GET /api/v1/customer/:id/invoice-detail': {
+    action: 'invoice/get-invoice-detail-by-customer-id'
   },
   'GET /api/v1/customer/:id/payment': {
     action: 'customer/payment/get-payment-by-customer-id'
@@ -173,6 +179,9 @@ module.exports.routes = {
   'GET /api/v1/vendor/:id/usage': {
     action: 'vendor/get-vendor-usage-by-id'
   },
+  'GET /api/v1/vendor/:id/usage/export': {
+    action: 'vendor/export-vendor-usage'
+  },
 
   // Customer Routes
   'POST /api/v1/invoice/': {
@@ -180,6 +189,15 @@ module.exports.routes = {
   },
   'GET /api/v1/invoice/': {
     action: 'invoice/get-invoice',
+  },
+  'GET /api/v1/invoice/export': {
+    action: 'invoice/export-invoice',
+  },
+  'GET /api/v1/invoice-detail/export': {
+    action: 'invoice/export-invoice-detail'
+  },
+  'GET /api/v1/invoice/detail': {
+    action: 'invoice/get-invoice-detail',
   },
   'PUT /api/v1/invoice/:id': {
     action: 'invoice/update-invoice',
@@ -190,6 +208,10 @@ module.exports.routes = {
   'GET /api/v1/customer/:id/usage': {
     action: 'customer/get-customer-usage-by-id'
   },
+  'GET /api/v1/customer/:id/usage/export': {
+    action: 'customer/export-customer-usage'
+  },
+
 
   //Customer Payment Routes
   'POST /api/v1/customer/payment/': {
@@ -197,6 +219,9 @@ module.exports.routes = {
   },
   'GET /api/v1/customer/payment/': {
     action: 'customer/payment/get-payment'
+  },
+  'GET /api/v1/customer/payment/export': {
+    action: 'customer/payment/export-payment'
   },
   'PUT /api/v1/customer/payment/:id': {
     action: 'customer/payment/update-payment'
@@ -211,6 +236,9 @@ module.exports.routes = {
   },
   'GET /api/v1/vendor/payment/': {
     action: 'vendor/payment/get-payment'
+  },
+  'GET /api/v1/vendor/payment/export': {
+    action: 'vendor/payment/export-payment'
   },
   'PUT /api/v1/vendor/payment/:id': {
     action: 'vendor/payment/update-payment'

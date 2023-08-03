@@ -27,6 +27,11 @@ module.exports = {
     address: {
       type: 'string',
       allowNull: true,
+    },
+
+    commission: {
+      type: 'number',
+      required: true,
     }
 
   },

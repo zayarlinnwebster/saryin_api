@@ -5,7 +5,7 @@
  * @docs        :: https://sailsjs.com/docs/concepts/models-and-orm/models
  */
 
-const { TEXT, STRING } = require('sequelize');
+const { TEXT, STRING, DECIMAL } = require('sequelize');
 
 module.exports = {
 
@@ -58,12 +58,35 @@ module.exports = {
       },
     },
 
+    commission: {
+      type: DECIMAL(5, 2).UNSIGNED,
+      allowNull: false,
+      validate: {
+        notEmpty: {
+          args: true,
+          msg: 'commission cannot be empty'
+        },
+        notNull: {
+          args: true,
+          msg: 'commission must be required'
+        },
+        min: {
+          args: [0],
+          msg: 'commission must be greater than or equal to 0',
+        },
+        max: {
+          args: [100],
+          msg: 'commission must be less than or equal to 100',
+        },
+      }
+    },
+
   },
 
   associations: function () {
 
-    Customer.hasMany(Invoice, {
-      as: 'invoices',
+    Customer.hasMany(InvoiceDetail, {
+      as: 'invoiceDetails',
       foreignKey: {
         name: 'customerId',
         allowNull: false,

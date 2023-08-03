@@ -70,16 +70,10 @@ module.exports = {
     let orderTerm = [];
 
     const paymentSearch = {
-      [Op.and]: [
-        {
-          paymentDate: {
-            [Op.between]: [fromDate, toDate]
-          },
-        },
-        {
-          vendorId: id
-        }
-      ],
+      paymentDate: {
+        [Op.between]: [fromDate, toDate]
+      },
+      vendorId: id
     };
 
     if (column && direction && column !== 'invoiceDate' && column !== 'customer.fullName') {

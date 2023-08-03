@@ -104,6 +104,22 @@ module.exports = {
       onUpdate: 'CASCADE',
     });
 
+    InvoiceDetail.belongsTo(Customer, {
+      as: 'customer',
+      foreignKey: {
+        name: 'customerId',
+        allowNull: false,
+        validate: {
+          notNull: {
+            args: true,
+            msg: 'customerId must be required'
+          },
+        }
+      },
+      onDelete: 'RESTRICT',
+      onUpdate: 'CASCADE',
+    });
+
     InvoiceDetail.belongsTo(Item, {
       as: 'item',
       foreignKey: {

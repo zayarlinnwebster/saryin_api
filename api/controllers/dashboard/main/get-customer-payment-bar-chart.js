@@ -1,4 +1,4 @@
-const { Op, fn, col } = require('sequelize');
+const { Op, literal } = require('sequelize');
 
 module.exports = {
 
@@ -51,7 +51,7 @@ module.exports = {
     const customerSearch = {
       [Op.and]: [
         {
-          '$invoices.invoice_date$': {
+          '$invoiceDetails.invoice.invoice_date$': {
             [Op.between]: [fromDate, toDate]
           },
         },
@@ -73,8 +73,8 @@ module.exports = {
     const customerList = await Customer.findAll({
       attributes: [
         'fullName',
-        [fn('sum', col('payments.paid_amount')), 'totalPaidAmount'],
-        [fn('sum', col('invoices.total_amount')), 'totalInvoiceAmount']
+        [literal('(SELECT SUM(`InvoiceDetail`.`total_price`) FROM `invoice` AS `Invoice` INNER JOIN `invoice_detail` as `InvoiceDetail` ON `Invoice`.`id` = `InvoiceDetail`.`invoice_id` WHERE `InvoiceDetail`.`customer_id` = `Customer`.`id`)'), 'totalInvoiceAmount'],
+        [literal('(SELECT SUM(`CustomerPayment`.`paid_amount`) FROM `customer_payment` AS `CustomerPayment` WHERE `CustomerPayment`.`customer_id` = `Customer`.`id`)'), 'totalPaidAmount'],
       ],
       where: customerSearch,
       include: [
@@ -85,10 +85,15 @@ module.exports = {
           attributes: [],
         },
         {
-          model: Invoice,
-          as: 'invoices',
-          duplicating: false,
+          model: InvoiceDetail,
+          as: 'invoiceDetails',
+          required: true,
           attributes: [],
+          include: {
+            model: Invoice,
+            as: 'invoice',
+            attributes: [],
+          }
         }
       ],
       group: ['Customer.id'],

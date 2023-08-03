@@ -84,19 +84,12 @@ module.exports = {
             [Op.substring]: search,
           },
         },
-        {
-          '$customer.full_name$': {
-            [Op.substring]: search,
-          },
-        },
       ],
     };
 
     if (column && direction) {
       if (column.indexOf('vendor') !== -1) {
         orderTerm = [[{ model: Vendor, as: 'vendor' }, column.substr(column.indexOf('.') + 1), direction.toUpperCase()]];
-      } else if (column.indexOf('customer') !== -1) {
-        orderTerm = [[{ model: Customer, as: 'customer' }, column.substr(column.indexOf('.') + 1), direction.toUpperCase()]];
       } else {
         orderTerm = [[column, direction.toUpperCase()]];
       }
@@ -114,19 +107,20 @@ module.exports = {
           required: true,
         },
         {
-          model: Customer,
-          as: 'customer',
-          attributes: ['id', 'fullName'],
-          required: true,
-        },
-        {
           model: InvoiceDetail,
           as: 'invoiceDetails',
-          include: {
-            model: Item,
-            as: 'item',
-            attributes: ['id', 'itemName']
-          }
+          include: [
+            {
+              model: Item,
+              as: 'item',
+              attributes: ['id', 'itemName']
+            },
+            {
+              model: Customer,
+              as: 'customer',
+              attributes: ['id', 'fullName', 'commission'],
+            },
+          ]
         }
       ],
     }).catch((err) => {
@@ -148,20 +142,21 @@ module.exports = {
           required: true,
         },
         {
-          model: Customer,
-          as: 'customer',
-          attributes: ['id', 'fullName'],
-          required: true,
-        },
-        {
           model: InvoiceDetail,
           as: 'invoiceDetails',
           required: true,
-          include: {
-            model: Item,
-            as: 'item',
-            attributes: ['id', 'itemName']
-          }
+          include: [
+            {
+              model: Item,
+              as: 'item',
+              attributes: ['id', 'itemName']
+            },
+            {
+              model: Customer,
+              as: 'customer',
+              attributes: ['id', 'fullName', 'commission'],
+            },
+          ]
         }
       ],
     }).catch((err) => {
@@ -171,9 +166,6 @@ module.exports = {
 
     const totalInvoiceAmount = invoiceList.reduce(
       (accumulator, currentValue) => accumulator + Number(currentValue.totalAmount), 0);
-
-    const totalCommissionAmount = invoiceList.reduce(
-      (accumulator, currentValue) => accumulator + Number(currentValue.commissionFee), 0);
 
     const totalInvoiceDetailAmount = invoiceList.reduce(
       (accumulator, currentValue) => accumulator + Number(currentValue.totalItemAmount), 0);
@@ -189,7 +181,6 @@ module.exports = {
       data: invoiceList,
       totalAmount: {
         totalInvoiceAmount,
-        totalCommissionAmount,
         totalGeneralAmount,
         totalInvoiceDetailAmount,
         totalLaborAmount
@@ -199,4 +190,5 @@ module.exports = {
   },
 
 };
+
 

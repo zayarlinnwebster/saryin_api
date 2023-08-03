@@ -47,7 +47,6 @@ module.exports = {
       attributes: [
         'invoiceDate',
         [fn('sum', col('total_amount')), 'invoiceTotalAmount'],
-        [fn('sum', col('commission_fee')), 'invoiceTotalCommissionFee'],
       ],
       where: {
         invoiceDate: {
@@ -62,13 +61,8 @@ module.exports = {
       });
 
     data.push({
-      name: 'နယ်ပို့ငွေ',
+      name: 'နယ်ပို့စာရင်း',
       data: invoiceList.map(invoice => Number(invoice.dataValues.invoiceTotalAmount))
-    });
-
-    data.push({
-      name: 'ကော်မရှင်',
-      data: invoiceList.map(invoice => Number(invoice.dataValues.invoiceTotalCommissionFee))
     });
 
     const labels = invoiceList.map(invoice => moment(invoice.invoiceDate).format('DD MMM'));

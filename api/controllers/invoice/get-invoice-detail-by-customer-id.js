@@ -79,7 +79,7 @@ module.exports = {
     const invoiceSearch = {
       [Op.and]: [
         {
-          invoiceDate: {
+          '$invoice.invoice_date$': {
             [Op.between]: [fromDate, toDate]
           },
         },
@@ -89,7 +89,7 @@ module.exports = {
       ],
       [Op.or]: [
         {
-          '$vendor.vendor_name$': {
+          '$invoice.vendor.vendor_name$': {
             [Op.substring]: search,
           },
         },
@@ -98,57 +98,51 @@ module.exports = {
 
     if (column && direction && column !== 'paymentDate') {
       if (column.indexOf('vendor') !== -1) {
-        orderTerm = [[{ model: Vendor, as: 'vendor' }, column.substr(column.indexOf('.') + 1), direction.toUpperCase()]];
+        orderTerm = [[{ model: Invoice, as: 'invoice' }, { model: Vendor, as: 'vendor' }, column.substr(column.indexOf('.') + 1), direction.toUpperCase()]];
+      } else if (column.indexOf('invoice') !== -1) {
+        orderTerm = [[{ model: Invoice, as: 'invoice' }, column.substr(column.indexOf('.') + 1), direction.toUpperCase()]];
+      } else if (column.indexOf('item') !== -1) {
+        orderTerm = [[{ model: Item, as: 'item' }, column.substr(column.indexOf('.') + 1), direction.toUpperCase()]];
       } else {
         orderTerm = [[column, direction.toUpperCase()]];
       }
     }
 
-    const invoiceCount = await Invoice.count({
+    const invoiceCount = await InvoiceDetail.count({
       where: invoiceSearch,
       offset: limit * (page - 1),
       limit: limit,
       include: [
         {
-          model: Vendor,
-          as: 'vendor',
-          attributes: ['id', 'vendorName'],
-          required: true,
-        },
-        {
           model: Customer,
           as: 'customer',
-          attributes: ['id', 'fullName'],
+          attributes: ['id', 'fullName', 'commission'],
           required: true,
         },
         {
-          model: InvoiceDetail,
-          as: 'invoiceDetails',
+          model: Invoice,
+          as: 'invoice',
+          required: true,
+          attributes: ['invoiceNo', 'invoiceDate'],
           include: {
-            model: Item,
-            as: 'item',
-            attributes: ['id', 'itemName']
+            model: Vendor,
+            as: 'vendor',
+            attributes: ['id', 'vendorName'],
+            required: true,
           }
+        },
+        {
+          model: Item,
+          as: 'item',
+          attributes: ['id', 'itemName']
         }
-      ],
+      ]
     }).catch((err) => {
       console.log(err);
       return exits.serverError(err);
     });
 
-    const invoiceList = await Invoice.findAll({
-      attributes: [
-        'id',
-        'invoiceDate',
-        'totalItemAmount',
-        'laborFee',
-        'generalFee',
-        'commission',
-        'commissionFee',
-        'totalAmount',
-        'vendorId',
-        'customerId',
-      ],
+    const invoiceList = await InvoiceDetail.findAll({
       where: invoiceSearch,
       offset: limit * (page - 1),
       limit: limit,
@@ -156,26 +150,32 @@ module.exports = {
       order: orderTerm,
       include: [
         {
-          model: Vendor,
-          as: 'vendor',
-          attributes: ['id', 'vendorName'],
-          required: true,
-        },
-        {
           model: Customer,
           as: 'customer',
-          attributes: ['id', 'fullName'],
+          attributes: ['id', 'fullName', 'commission'],
           required: true,
         },
         {
-          model: InvoiceDetail,
-          as: 'invoiceDetails',
+          model: Invoice,
+          as: 'invoice',
           required: true,
-          include: {
-            model: Item,
-            as: 'item',
-            attributes: ['id', 'itemName']
-          }
+          include: [
+            {
+              model: Vendor,
+              as: 'vendor',
+              attributes: ['id', 'vendorName'],
+              required: true,
+            },
+            {
+              model: InvoiceDetail,
+              as: 'invoiceDetails',
+            }
+          ]
+        },
+        {
+          model: Item,
+          as: 'item',
+          attributes: ['id', 'itemName']
         }
       ],
     }).catch((err) => {

@@ -1,4 +1,4 @@
-const { Op } = require('sequelize');
+const { Op, literal } = require('sequelize');
 
 module.exports = {
 
@@ -44,35 +44,23 @@ module.exports = {
     let labels = [];
     let data = [];
 
-    const invoiceTotalAmount = await Invoice.sum('totalAmount', {
-      where: {
-        invoiceDate: {
-          [Op.between]: [fromDate, toDate]
-        }
-      }
-    })
-      .catch((err) => {
-        console.log(err);
-        return exits.serverError(err);
-      });
+    const customerList = await Customer.findAll({
+      attributes: [
+        'id',
+        'commission',
+        [literal('(SELECT SUM(`InvoiceDetail`.`total_price`) FROM `invoice` AS `Invoice` INNER JOIN `invoice_detail` as `InvoiceDetail` ON `Invoice`.`id` = `InvoiceDetail`.`invoice_id` WHERE `InvoiceDetail`.`customer_id` = `Customer`.`id` AND (DATE(`Invoice`.`invoice_date`) >= \'' + fromDate + '\' AND DATE(`Invoice`.`invoice_date`) <= \'' + toDate + '\'))'), 'totalInvoiceAmount'],
+      ],
+      subQuery: false,
+    });
 
-    labels.push('နယ်ပို့');
-    data.push(invoiceTotalAmount || 0);
-
-    const commissionTotalAmount = await Invoice.sum('commissionFee', {
-      where: {
-        invoiceDate: {
-          [Op.between]: [fromDate, toDate]
-        }
-      }
-    })
-      .catch((err) => {
-        console.log(err);
-        return exits.serverError(err);
-      });
+    const totalCommissionAmount = customerList.reduce(
+      (accumulator, customer) =>
+        accumulator + (customer.dataValues.totalInvoiceAmount * customer.commission / 100),
+      0
+    );
 
     labels.push('ကော်မရှင်');
-    data.push(commissionTotalAmount || 0);
+    data.push(totalCommissionAmount || 0);
 
     const customerTotalPayment = await CustomerPayment.sum('paidAmount', {
       where: {
@@ -86,7 +74,7 @@ module.exports = {
         return exits.serverError(err);
       });
 
-    labels.push('ကုန်သည်');
+    labels.push('ကုန်သည် လွှဲငွေ');
     data.push(customerTotalPayment || 0);
 
     const vendorTotalPayment = await VendorPayment.sum('paidAmount', {
@@ -101,7 +89,7 @@ module.exports = {
         return exits.serverError(err);
       });
 
-    labels.push('ပွဲရုံ');
+    labels.push('ပွဲရုံ သွင်းငွေ');
     data.push(vendorTotalPayment || 0);
 
     return exits.success({ labels, data });

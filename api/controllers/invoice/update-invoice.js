@@ -36,16 +36,6 @@ module.exports = {
       required: true,
     },
 
-    commission: {
-      type: 'number',
-      required: true,
-    },
-
-    commissionFee: {
-      type: 'number',
-      required: true,
-    },
-
     totalAmount: {
       type: 'number',
       required: true,

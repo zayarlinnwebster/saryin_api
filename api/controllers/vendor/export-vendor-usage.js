@@ -1,0 +1,339 @@
+const ExcelJS = require('exceljs');
+const { Op, literal } = require('sequelize');
+
+module.exports = {
+
+
+  friendlyName: 'Export vendor usage',
+
+
+  description: '',
+
+
+  inputs: {
+
+    id: {
+      type: 'number',
+      required: true,
+    },
+
+    search: {
+      type: 'string',
+      defaultsTo: '',
+    },
+
+    fromDate: {
+      type: 'ref',
+      required: true,
+    },
+
+    toDate: {
+      type: 'ref',
+      required: true,
+    },
+
+  },
+
+
+  exits: {
+
+    success: {
+      statusCode: 200,
+    },
+
+    serverError: {
+      responseType: 'serverError',
+    },
+
+  },
+
+
+  fn: async function ({
+    id, fromDate, toDate
+  }, exits) {
+
+    const vendorPaymentList = await VendorPayment.findAll({
+      attributes: [
+        'id',
+        'vendorId',
+        'paidBy',
+        'paidAmount',
+        'transactionNo',
+        'paymentDate',
+        [literal('(SELECT SUM(`VendorPayment`.`paid_amount`) FROM `vendor_payment` AS `VendorPayment` WHERE `VendorPayment`.`vendor_id` = `vendor`.`id` AND (DATE(`payment_date`) >= \'' + fromDate + '\' AND DATE(`payment_date`) <= \'' + toDate + '\'))'), 'totalPaidAmount'],
+        [literal('(SELECT SUM(`Invoice`.`total_amount`) FROM `invoice` AS `Invoice` WHERE `Invoice`.`vendor_id` = `vendor`.`id` AND (DATE(`invoice_date`) >= \'' + fromDate + '\' AND DATE(`invoice_date`) <= \'' + toDate + '\'))'), 'totalInvoiceAmount'],
+      ],
+      where: {
+        paymentDate: {
+          [Op.between]: [fromDate, toDate]
+        },
+        vendorId: id
+      },
+      subQuery: false,
+      include: [
+        {
+          model: Vendor,
+          as: 'vendor',
+          attributes: ['id', 'vendorName'],
+          required: true,
+        },
+      ],
+    }).catch((err) => {
+      console.log(err);
+      return exits.serverError(err);
+    });
+
+    const totalPaidAmount = vendorPaymentList.reduce(
+      (accumulator, currentValue) => accumulator + Number(currentValue.paidAmount), 0);
+
+    const invoiceList = await Invoice.findAll({
+      attributes: [
+        'id',
+        'invoiceNo',
+        'invoiceDate',
+        'totalItemAmount',
+        'laborFee',
+        'generalFee',
+        'totalAmount',
+        'vendorId',
+      ],
+      where: {
+        invoiceDate: {
+          [Op.between]: [fromDate, toDate]
+        },
+        vendorId: id
+      },
+      subQuery: false,
+      include: [
+        {
+          model: Vendor,
+          as: 'vendor',
+          attributes: ['id', 'vendorName'],
+          required: true,
+        },
+        {
+          model: InvoiceDetail,
+          as: 'invoiceDetails',
+          required: true,
+          include: [
+            {
+              model: Customer,
+              as: 'customer',
+              attributes: ['id', 'fullName', 'commission'],
+              required: true,
+            },
+            {
+              model: Item,
+              as: 'item',
+              attributes: ['id', 'itemName']
+            }
+          ]
+        }
+      ],
+    }).catch((err) => {
+      console.log(err);
+      return exits.serverError(err);
+    });
+
+    const totalInvoiceAmount = invoiceList.reduce(
+      (accumulator, currentValue) => accumulator + Number(currentValue.totalAmount), 0);
+
+    const totalInvoiceDetailAmount = invoiceList.reduce(
+      (accumulator, currentValue) => accumulator + Number(currentValue.totalItemAmount), 0);
+
+    const totalGeneralAmount = invoiceList.reduce(
+      (accumulator, currentValue) => accumulator + Number(currentValue.generalFee), 0);
+
+    const totalLaborAmount = invoiceList.reduce(
+      (accumulator, currentValue) => accumulator + Number(currentValue.laborFee), 0);
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = this.req.user.username;
+    workbook.modified = new Date();
+
+    // pageSetup settings for A4 - landscape
+    const invoiceListWorksheet = workbook.addWorksheet(`နယ်ပို့စာရင်းများ`, {
+      pageSetup: { paperSize: 9, orientation: 'landscape' }
+    });
+
+    invoiceListWorksheet.columns = [
+      { header: 'နယ်ပို့နံပါတ်', key: 'invoiceNo' },
+      { header: 'ရက်စွဲ', key: 'invoiceDate' },
+      { header: 'ပွဲရုံအမည်', key: 'vendorName' },
+      { header: 'အထွေထွေ အခကြေးငွေ', key: 'generalFee' },
+      { header: 'အလုပ်သမား အခကြေးငွေ', key: 'laborFee' },
+      { header: 'စုစုပေါင်းကုန်တန်ဖိုး', key: 'totalItemAmount' },
+      { header: 'သင့်ငွေ', key: 'totalAmount' },
+    ];
+
+    invoiceListWorksheet.columns.forEach(column => {
+      column.width = column.header.length < 12 ? 12 : column.header.length;
+      column.font = {
+        name: 'Arial',
+        size: 11,
+      };
+    });
+
+    invoiceListWorksheet.getRow(1).font = {
+      name: 'Arial',
+      bold: true,
+      size: 11
+    };
+    invoiceListWorksheet.getRow(1).height = 20;
+    invoiceListWorksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+    // Invoice Details Work Sheet Config
+    const invoiceDetailsWorksheet = workbook.addWorksheet(`နယ်ပို့စာရင်းအသေးစိတ်`, {
+      pageSetup: {
+        paperSize: 9, orientation: 'landscape'
+      }
+    });
+
+    invoiceDetailsWorksheet.columns = [
+      { header: 'နယ်ပို့နံပါတ်', key: 'invoiceNo' },
+      { header: 'ရက်စွဲ', key: 'invoiceDate' },
+      { header: 'ပွဲရုံအမည်', key: 'vendorName' },
+      { header: 'ကုန်သည်အမည်', key: 'customerName' },
+      { header: 'ငါးအမည်', key: 'itemName' },
+      { header: 'အရေအတွက်', key: 'qty' },
+      { header: 'စျေးနှုန်း', key: 'unitPrice' },
+      { header: 'အလေးချိန်', key: 'weight' },
+      { header: 'စုစုပေါင်းတန်ဖိုး', key: 'totalPrice' },
+    ];
+
+    invoiceDetailsWorksheet.columns.forEach(column => {
+      column.width = column.header.length < 12 ? 12 : column.header.length;
+      column.font = {
+        name: 'Arial',
+        size: 11,
+      };
+    });
+
+    invoiceDetailsWorksheet.getRow(1).font = {
+      name: 'Arial',
+      bold: true,
+      size: 11
+    };
+    invoiceDetailsWorksheet.getRow(1).height = 20;
+    invoiceDetailsWorksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+    for (let invoice of invoiceList) {
+      invoiceListWorksheet.addRow({
+        invoiceNo: invoice.invoiceNo,
+        invoiceDate: invoice.invoiceDate,
+        vendorName: invoice.vendor.vendorName,
+        generalFee: invoice.generalFee,
+        laborFee: invoice.laborFee,
+        totalItemAmount: invoice.totalItemAmount,
+        totalAmount: invoice.totalAmount,
+      });
+
+      for (let invoiceDetail of invoice.invoiceDetails) {
+        invoiceDetailsWorksheet.addRow({
+          invoiceNo: invoice.invoiceNo,
+          invoiceDate: invoice.invoiceDate,
+          vendorName: invoice.vendor.vendorName,
+          customerName: invoiceDetail.customer.fullName,
+          itemName: invoiceDetail.item.itemName,
+          qty: invoiceDetail.qty,
+          unitPrice: invoiceDetail.unitPrice,
+          weight: invoiceDetail.weight,
+          totalPrice: invoiceDetail.totalPrice,
+        });
+      }
+    }
+
+    // Invoice Details Work Sheet Config
+    const vendorPaymentsWorksheet = workbook.addWorksheet(`ပွဲရုံသွင်းငွေစာရင်းများ`, {
+      pageSetup: { paperSize: 9, orientation: 'landscape' }
+    });
+
+    vendorPaymentsWorksheet.columns = [
+      { header: 'ရက်စွဲ', key: 'paymentDate' },
+      { header: 'ပွဲရုံအမည်', key: 'vendorName' },
+      { header: 'သွင်းငွေ', key: 'paidAmount' },
+      { header: 'ပေးဆောင်ပုံ', key: 'paidBy' },
+      { header: 'ငွေလွှဲနံပါတ်', key: 'transactionNo' },
+      { header: 'ကျန်ငွေ', key: 'leftAmount' },
+    ];
+
+    vendorPaymentsWorksheet.columns.forEach(column => {
+      column.width = column.header.length < 12 ? 12 : column.header.length;
+      column.font = {
+        name: 'Arial',
+        size: 11,
+      };
+    });
+
+    vendorPaymentsWorksheet.getRow(1).font = {
+      name: 'Arial',
+      bold: true,
+      size: 11
+    };
+    vendorPaymentsWorksheet.getRow(1).height = 20;
+    vendorPaymentsWorksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+
+    for (let vendorPayment of vendorPaymentList) {
+      vendorPaymentsWorksheet.addRow({
+        paymentDate: vendorPayment.paymentDate,
+        vendorName: vendorPayment.vendor.vendorName,
+        paidAmount: vendorPayment.paidAmount,
+        paidBy: vendorPayment.paidBy,
+        transactionNo: vendorPayment.transactionNo,
+        leftAmount: Number(vendorPayment.dataValues.totalInvoiceAmount) - Number(vendorPayment.dataValues.totalPaidAmount),
+      });
+    }
+
+    // pageSetup settings for A4 - landscape
+    const totalInvoiceSummaryWorksheet = workbook.addWorksheet(`စုစုပေါင်းစာရင်းအနှစ်ချုပ်`, {
+      pageSetup: { paperSize: 9, orientation: 'landscape' }
+    });
+
+    totalInvoiceSummaryWorksheet.columns = [
+      { header: 'စုစုပေါင်းအလုပ်သမား အခကြေးငွေ', key: 'totalLaborAmount' },
+      { header: 'စုစုပေါင်းအထွေထွေ အခကြေးငွေ', key: 'totalGeneralAmount' },
+      { header: 'စုစုပေါင်းကုန်တန်ဖိုး', key: 'totalInvoiceDetailAmount' },
+      { header: 'စုစုပေါင်းသင့်ငွေ ', key: 'totalInvoiceAmount' },
+      { header: 'စုစုပေါင်းသွင်းငွေတန်ဖိုး', key: 'totalPaidAmount' },
+      { header: 'စုစုပေါင်းကျန်ငွေ', key: 'totalLeftAmount' },
+    ];
+
+    totalInvoiceSummaryWorksheet.columns.forEach(column => {
+      column.width = column.header.length < 12 ? 12 : column.header.length;
+      column.font = {
+        name: 'Arial',
+        size: 11,
+      };
+    });
+
+    totalInvoiceSummaryWorksheet.getRow(1).font = {
+      name: 'Arial',
+      bold: true,
+      size: 11
+    };
+    totalInvoiceSummaryWorksheet.getRow(1).height = 20;
+    totalInvoiceSummaryWorksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+    totalInvoiceSummaryWorksheet.addRow({
+      totalPaidAmount: totalPaidAmount,
+      totalLaborAmount: totalLaborAmount,
+      totalGeneralAmount: totalGeneralAmount,
+      totalInvoiceDetailAmount: totalInvoiceDetailAmount,
+      totalInvoiceAmount: totalInvoiceAmount,
+      totalLeftAmount: Number(totalInvoiceAmount) - Number(totalPaidAmount),
+    });
+
+    const fileName = `SarYin(${new Date(fromDate).toDateString()} To ${new Date(toDate).toDateString()}).xlsx`;
+
+    this.res.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    this.res.set('Content-Disposition', 'attachment; filename=' + fileName);
+
+    await workbook.xlsx.write(this.res);
+
+    this.res.end();
+
+  }
+
+
+};

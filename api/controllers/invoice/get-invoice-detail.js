@@ -1,20 +1,15 @@
-const { literal, Op } = require('sequelize');
+const { Op } = require('sequelize');
 
 module.exports = {
 
 
-  friendlyName: 'Get stock item by store id',
+  friendlyName: 'Get invoice detail',
 
 
   description: '',
 
 
   inputs: {
-
-    id: {
-      type: 'number',
-      required: true,
-    },
 
     page: {
       type: 'number',
@@ -70,26 +65,22 @@ module.exports = {
 
 
   fn: async function ({
-    id, page, limit, search, fromDate, toDate, column, direction
+    page, limit, search, fromDate, toDate, column, direction
   }, exits) {
 
     search = search.trim() || '';
     let orderTerm = [];
 
-    const stockItemSearch = {
+    const invoiceSearch = {
       [Op.and]: [
         {
-          storedDate: {
+          '$invoice.invoice_date$': {
             [Op.between]: [fromDate, toDate]
           },
-        },
-        {
-          storeId: id
-        }
-      ],
+        }],
       [Op.or]: [
         {
-          '$item.item_name$': {
+          '$invoice.vendor.vendor_name$': {
             [Op.substring]: search,
           },
         },
@@ -98,11 +89,20 @@ module.exports = {
             [Op.substring]: search,
           },
         },
+        {
+          '$item.item_name$': {
+            [Op.substring]: search,
+          },
+        },
       ],
     };
 
     if (column && direction) {
-      if (column.indexOf('item') !== -1) {
+      if (column.indexOf('vendor') !== -1) {
+        orderTerm = [[{ model: Invoice, as: 'invoice' }, { model: Vendor, as: 'vendor' }, column.substr(column.indexOf('.') + 1), direction.toUpperCase()]];
+      } else if (column.indexOf('invoice') !== -1) {
+        orderTerm = [[{ model: Invoice, as: 'invoice' }, column.substr(column.indexOf('.') + 1), direction.toUpperCase()]];
+      } else if (column.indexOf('item') !== -1) {
         orderTerm = [[{ model: Item, as: 'item' }, column.substr(column.indexOf('.') + 1), direction.toUpperCase()]];
       } else if (column.indexOf('customer') !== -1) {
         orderTerm = [[{ model: Customer, as: 'customer' }, column.substr(column.indexOf('.') + 1), direction.toUpperCase()]];
@@ -111,19 +111,11 @@ module.exports = {
       }
     }
 
-    console.log(orderTerm);
-
-    const stockItemCount = await StockItem.count({
-      where: stockItemSearch,
+    const invoiceDetailCount = await InvoiceDetail.count({
+      where: invoiceSearch,
       offset: limit * (page - 1),
       limit: limit,
       include: [
-        {
-          model: Item,
-          as: 'item',
-          attributes: ['id', 'itemName'],
-          required: true,
-        },
         {
           model: Customer,
           as: 'customer',
@@ -131,66 +123,82 @@ module.exports = {
           required: true,
         },
         {
-          model: Store,
-          as: 'store',
-          attributes: ['id', 'storeName'],
+          model: Invoice,
+          as: 'invoice',
           required: true,
+          include: [
+            {
+              model: Vendor,
+              as: 'vendor',
+              attributes: ['id', 'vendorName'],
+              required: true,
+            },
+            {
+              model: InvoiceDetail,
+              as: 'invoiceDetails',
+            }
+          ]
         },
-      ],
+        {
+          model: Item,
+          as: 'item',
+          attributes: ['id', 'itemName'],
+          required: true,
+        }
+      ]
     }).catch((err) => {
       console.log(err);
       return exits.serverError(err);
     });
 
-    const stockItemList = await StockItem.findAll({
-      attributes: [
-        'id',
-        'storedDate',
-        'qty',
-        'weight',
-        'itemId',
-        'storeId',
-        'customerId',
-        [literal('(SELECT SUM(`StockItemOut`.`qty`) FROM `stock_item_out` as `StockItemOut` WHERE `StockItemOut`.`stock_item_id` = `StockItem`.`id`)'), 'totalQtyOut']
-      ],
-      where: stockItemSearch,
+    const invoiceDetailList = await InvoiceDetail.findAll({
+      where: invoiceSearch,
       offset: limit * (page - 1),
       limit: limit,
+      order: orderTerm,
       subQuery: false,
       include: [
         {
-          model: Item,
-          as: 'item',
-          attributes: ['id', 'itemName'],
-          required: true,
-        },
-        {
           model: Customer,
           as: 'customer',
           attributes: ['id', 'fullName', 'commission'],
           required: true,
         },
         {
-          model: Store,
-          as: 'store',
-          attributes: ['id', 'storeName'],
+          model: Invoice,
+          as: 'invoice',
           required: true,
+          attributes: ['invoiceNo', 'invoiceDate'],
+          include: [
+            {
+              model: Vendor,
+              as: 'vendor',
+              attributes: ['id', 'vendorName'],
+              required: true,
+            },
+          ]
         },
         {
-          model: StockItemOut,
-          as: 'outItems',
-          required: false,
+          model: Item,
+          as: 'item',
+          attributes: ['id', 'itemName'],
+          required: true,
         }
       ],
-      order: orderTerm
     }).catch((err) => {
       console.log(err);
       return exits.serverError(err);
     });
 
+    const totalInvoiceDetailAmount = invoiceDetailList.reduce(
+      (accumulator, currentValue) => accumulator + Number(currentValue.totalPrice), 0);
+
     return exits.success({
-      totalCounts: stockItemCount,
-      data: stockItemList,
+      totalCounts: invoiceDetailCount,
+      data: invoiceDetailList,
+      totalAmount: {
+        totalInvoiceDetailAmount,
+      }
     });
 
   },

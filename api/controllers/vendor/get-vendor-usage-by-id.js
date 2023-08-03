@@ -67,23 +67,10 @@ module.exports = {
 
     const totalVendorInvoice = await Invoice.sum('totalAmount', {
       where: {
-        [Op.or]: [
-          {
-            '$customer.full_name$': {
-              [Op.substring]: search,
-            },
-          },
-        ],
         invoiceDate: {
           [Op.between]: [fromDate, toDate]
         },
         vendorId: id,
-      },
-      include: {
-        model: Customer,
-        as: 'customer',
-        attributes: [],
-        required: true,
       },
     }).catch((err) => {
       console.log(err);

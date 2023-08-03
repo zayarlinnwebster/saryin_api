@@ -28,11 +28,6 @@ module.exports = {
       min: 1,
     },
 
-    search: {
-      type: 'string',
-      defaultsTo: '',
-    },
-
     fromDate: {
       type: 'ref',
       required: true,
@@ -70,30 +65,15 @@ module.exports = {
 
 
   fn: async function ({
-    id, page, limit, search, fromDate, toDate, column, direction
+    id, page, limit, fromDate, toDate, column, direction
   }, exits) {
-
-    search = search.trim() || '';
     let orderTerm = [];
 
     const invoiceSearch = {
-      [Op.and]: [
-        {
-          invoiceDate: {
-            [Op.between]: [fromDate, toDate]
-          },
-        },
-        {
-          vendorId: id
-        }
-      ],
-      [Op.or]: [
-        {
-          '$customer.full_name$': {
-            [Op.substring]: search,
-          },
-        },
-      ],
+      invoiceDate: {
+        [Op.between]: [fromDate, toDate]
+      },
+      vendorId: id
     };
 
     if (column && direction && column !== 'paymentDate') {
@@ -116,19 +96,21 @@ module.exports = {
           required: true,
         },
         {
-          model: Customer,
-          as: 'customer',
-          attributes: ['id', 'fullName'],
-          required: true,
-        },
-        {
           model: InvoiceDetail,
           as: 'invoiceDetails',
-          include: {
-            model: Item,
-            as: 'item',
-            attributes: ['id', 'itemName']
-          }
+          include: [
+            {
+              model: Customer,
+              as: 'customer',
+              attributes: ['id', 'fullName', 'commission'],
+              required: true,
+            },
+            {
+              model: Item,
+              as: 'item',
+              attributes: ['id', 'itemName']
+            }
+          ]
         }
       ],
     }).catch((err) => {
@@ -139,15 +121,13 @@ module.exports = {
     const invoiceList = await Invoice.findAll({
       attributes: [
         'id',
+        'invoiceNo',
         'invoiceDate',
         'totalItemAmount',
         'laborFee',
         'generalFee',
-        'commission',
-        'commissionFee',
         'totalAmount',
         'vendorId',
-        'customerId',
       ],
       where: invoiceSearch,
       offset: limit * (page - 1),
@@ -162,20 +142,22 @@ module.exports = {
           required: true,
         },
         {
-          model: Customer,
-          as: 'customer',
-          attributes: ['id', 'fullName'],
-          required: true,
-        },
-        {
           model: InvoiceDetail,
           as: 'invoiceDetails',
           required: true,
-          include: {
-            model: Item,
-            as: 'item',
-            attributes: ['id', 'itemName']
-          }
+          include: [
+            {
+              model: Customer,
+              as: 'customer',
+              attributes: ['id', 'fullName', 'commission'],
+              required: true,
+            },
+            {
+              model: Item,
+              as: 'item',
+              attributes: ['id', 'itemName']
+            }
+          ]
         }
       ],
     }).catch((err) => {

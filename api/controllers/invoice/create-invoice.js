@@ -29,27 +29,12 @@ module.exports = {
       required: true,
     },
 
-    commission: {
-      type: 'number',
-      required: true,
-    },
-
-    commissionFee: {
-      type: 'number',
-      required: true,
-    },
-
     totalAmount: {
       type: 'number',
       required: true,
     },
 
     vendorId: {
-      type: 'number',
-      required: true,
-    },
-
-    customerId: {
       type: 'number',
       required: true,
     },
@@ -81,7 +66,10 @@ module.exports = {
 
   fn: async function (inputs, exits) {
 
-    const createdInvoice = await Invoice.create(inputs, {
+    const createdInvoice = await Invoice.create({
+      ...inputs,
+      invoiceNo: await Invoice.generateInvoiceNo(),
+    }, {
       include: {
         model: InvoiceDetail,
         as: 'invoiceDetails'

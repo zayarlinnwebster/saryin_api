@@ -32,7 +32,17 @@ module.exports = {
     customerId: {
       type: 'number',
       required: true,
-    }
+    },
+
+    remainingAmount: {
+      type: 'number',
+      required: true,
+    },
+
+    commission: {
+      type: 'number',
+      required: true,
+    },
 
   },
 

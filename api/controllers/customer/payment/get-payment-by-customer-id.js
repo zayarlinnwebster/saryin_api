@@ -70,16 +70,10 @@ module.exports = {
     let orderTerm = [];
 
     const paymentSearch = {
-      [Op.and]: [
-        {
-          paymentDate: {
-            [Op.between]: [fromDate, toDate]
-          },
-        },
-        {
-          customerId: id
-        }
-      ],
+      paymentDate: {
+        [Op.between]: [fromDate, toDate]
+      },
+      customerId: id
     };
 
     if (column && direction && column !== 'invoiceDate' && column !== 'vendor.vendorName') {
@@ -105,7 +99,7 @@ module.exports = {
         'paymentDate',
         [literal('(SELECT SUM(`CustomerPayment`.`paid_amount`) FROM `customer_payment` AS `CustomerPayment` WHERE `CustomerPayment`.`customer_id` = `customer`.`id` AND (DATE(`payment_date`) >= \'' + fromDate + '\' AND DATE(`payment_date`) <= \'' + toDate + '\'))'), 'totalPaidAmount'],
         // eslint-disable-next-line quotes
-        [literal("(SELECT SUM(`Invoice`.`total_amount`) FROM `invoice` AS `Invoice` WHERE `Invoice`.`customer_id` = `customer`.`id` AND (DATE(`invoice_date`) >= '" + fromDate + "' AND DATE(`invoice_date`) <= '" + toDate + "'))"), 'totalInvoiceAmount'],
+        [literal("(SELECT SUM(`InvoiceDetail`.`total_price`) FROM `invoice` AS `Invoice` INNER JOIN `invoice_detail` as `InvoiceDetail` ON `Invoice`.`id` = `InvoiceDetail`.`invoice_id` WHERE `InvoiceDetail`.`customer_id` = `customer`.`id` AND (DATE(`Invoice`.`invoice_date`) >= '" + fromDate + "' AND DATE(`Invoice`.`invoice_date`) <= '" + toDate + "'))"), 'totalInvoiceAmount'],
       ],
       where: paymentSearch,
       offset: limit * (page - 1),
@@ -116,7 +110,7 @@ module.exports = {
         {
           model: Customer,
           as: 'customer',
-          attributes: ['id', 'fullName'],
+          attributes: ['id', 'fullName', 'commission'],
           required: true,
         },
       ],

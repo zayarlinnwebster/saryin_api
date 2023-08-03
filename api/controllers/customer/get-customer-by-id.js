@@ -1,5 +1,3 @@
-const { literal } = require('sequelize');
-
 module.exports = {
 
 
@@ -42,6 +40,7 @@ module.exports = {
         'fullName',
         'phoneNo',
         'address',
+        'commission',
       ],
       where: {
         id,

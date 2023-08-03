@@ -128,7 +128,7 @@ module.exports = {
         {
           model: Customer,
           as: 'customer',
-          attributes: ['id', 'fullName'],
+          attributes: ['id', 'fullName', 'commission'],
           required: true,
         },
         {
@@ -169,7 +169,7 @@ module.exports = {
         {
           model: Customer,
           as: 'customer',
-          attributes: ['id', 'fullName'],
+          attributes: ['id', 'fullName', 'commission'],
           required: true,
         },
         {

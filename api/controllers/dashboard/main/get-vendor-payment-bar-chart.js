@@ -1,4 +1,4 @@
-const { Op, fn, col } = require('sequelize');
+const { Op, literal } = require('sequelize');
 
 module.exports = {
 
@@ -73,9 +73,8 @@ module.exports = {
     const vendorList = await Vendor.findAll({
       attributes: [
         'vendorName',
-        [fn('sum', col('payments.paid_amount')), 'totalPaidAmount'],
-        [fn('sum', col('invoices.total_amount')), 'totalInvoiceAmount']
-      ],
+        [literal('(SELECT SUM(`VendorPayment`.`paid_amount`) FROM `vendor_payment` AS `VendorPayment` WHERE `VendorPayment`.`vendor_id` = `Vendor`.`id`)'), 'totalPaidAmount'],
+        [literal('(SELECT SUM(`Invoice`.`total_amount`) FROM `invoice` AS `Invoice` WHERE `Invoice`.`vendor_id` = `Vendor`.`id`)'), 'totalInvoiceAmount'],],
       where: vendorSearch,
       include: [
         {
@@ -105,7 +104,7 @@ module.exports = {
     });
 
     data.push({
-      name: 'လွှဲငွေ',
+      name: 'သွင်းငွေ',
       data: vendorList.map(vendor => vendor.dataValues.totalPaidAmount)
     });
 
