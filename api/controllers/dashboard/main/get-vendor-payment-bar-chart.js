@@ -48,49 +48,21 @@ module.exports = {
     const data = [];
     search = search.trim() || '';
 
-    const vendorSearch = {
-      [Op.and]: [
-        {
-          '$invoices.invoice_date$': {
-            [Op.between]: [fromDate, toDate]
-          },
-        },
-        {
-          '$payments.payment_date$': {
-            [Op.between]: [fromDate, toDate]
-          },
-        }
-      ],
-      [Op.or]: [
-        {
-          vendorName: {
-            [Op.substring]: search,
-          },
-        },
-      ],
-    };
-
     const vendorList = await Vendor.findAll({
       attributes: [
         'vendorName',
-        [literal('(SELECT SUM(`VendorPayment`.`paid_amount`) FROM `vendor_payment` AS `VendorPayment` WHERE `VendorPayment`.`vendor_id` = `Vendor`.`id`)'), 'totalPaidAmount'],
-        [literal('(SELECT SUM(`Invoice`.`total_amount`) FROM `invoice` AS `Invoice` WHERE `Invoice`.`vendor_id` = `Vendor`.`id`)'), 'totalInvoiceAmount'],],
-      where: vendorSearch,
-      include: [
-        {
-          model: VendorPayment,
-          as: 'payments',
-          duplicating: false,
-          attributes: [],
-        },
-        {
-          model: Invoice,
-          as: 'invoices',
-          duplicating: false,
-          attributes: [],
-        }
+        [literal('(SELECT SUM(`VendorPayment`.`paid_amount`) FROM `vendor_payment` AS `VendorPayment` WHERE `VendorPayment`.`vendor_id` = `Vendor`.`id` AND (DATE(`payment_date`) >= \'' + fromDate + '\' AND DATE(`payment_date`) <= \'' + toDate + '\'))'), 'totalPaidAmount'],
+        [literal('(SELECT SUM(`InvoiceDetail`.`total_price`) FROM `invoice` AS `Invoice` INNER JOIN `invoice_detail` as `InvoiceDetail` ON `Invoice`.`id` = `InvoiceDetail`.`invoice_id` WHERE `InvoiceDetail`.`vendor_id` = `Vendor`.`id` AND (DATE(`Invoice`.`invoice_date`) >= \'' + fromDate + '\' AND DATE(`Invoice`.`invoice_date`) <= \'' + toDate + '\'))'), 'totalInvoiceAmount'],
       ],
-      group: ['Vendor.id'],
+      where: {
+        [Op.or]: [
+          {
+            vendorName: {
+              [Op.substring]: search,
+            },
+          },
+        ],
+      },
       order: [['totalInvoiceAmount', 'DESC']]
     }).catch((err) => {
       console.log(err);

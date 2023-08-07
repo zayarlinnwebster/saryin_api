@@ -170,8 +170,8 @@ module.exports.routes = {
   'DELETE /api/v1/vendor/:id': {
     action: 'vendor/delete-vendor',
   },
-  'GET /api/v1/vendor/:id/invoice': {
-    action: 'invoice/get-invoice-by-vendor-id'
+  'GET /api/v1/vendor/:id/invoice-detail': {
+    action: 'invoice/get-invoice-detail-by-vendor-id'
   },
   'GET /api/v1/vendor/:id/payment': {
     action: 'vendor/payment/get-payment-by-vendor-id'

@@ -61,7 +61,7 @@ module.exports = {
         'transactionNo',
         'paymentDate',
         [literal('(SELECT SUM(`VendorPayment`.`paid_amount`) FROM `vendor_payment` AS `VendorPayment` WHERE `VendorPayment`.`vendor_id` = `vendor`.`id` AND (DATE(`payment_date`) >= \'' + fromDate + '\' AND DATE(`payment_date`) <= \'' + toDate + '\'))'), 'totalPaidAmount'],
-        [literal('(SELECT SUM(`Invoice`.`total_amount`) FROM `invoice` AS `Invoice` WHERE `Invoice`.`vendor_id` = `vendor`.`id` AND (DATE(`invoice_date`) >= \'' + fromDate + '\' AND DATE(`invoice_date`) <= \'' + toDate + '\'))'), 'totalInvoiceAmount'],
+        [literal('(SELECT SUM(`InvoiceDetail`.`total_price`) FROM `invoice` AS `Invoice` INNER JOIN `invoice_detail` as `InvoiceDetail` ON `Invoice`.`id` = `InvoiceDetail`.`invoice_id` WHERE `InvoiceDetail`.`vendor_id` = `vendor`.`id` AND (DATE(`Invoice`.`invoice_date`) >= \'' + fromDate + '\' AND DATE(`Invoice`.`invoice_date`) <= \'' + toDate + '\'))'), 'totalInvoiceAmount'],
       ],
       where: {
         paymentDate: {
@@ -86,22 +86,18 @@ module.exports = {
     const totalPaidAmount = vendorPaymentList.reduce(
       (accumulator, currentValue) => accumulator + Number(currentValue.paidAmount), 0);
 
-    const invoiceList = await Invoice.findAll({
-      attributes: [
-        'id',
-        'invoiceNo',
-        'invoiceDate',
-        'totalItemAmount',
-        'laborFee',
-        'generalFee',
-        'totalAmount',
-        'vendorId',
-      ],
+    const invoiceDetailList = await InvoiceDetail.findAll({
       where: {
-        invoiceDate: {
-          [Op.between]: [fromDate, toDate]
-        },
-        vendorId: id
+        [Op.and]: [
+          {
+            '$invoice.invoice_date$': {
+              [Op.between]: [fromDate, toDate]
+            },
+          },
+          {
+            vendorId: id
+          }
+        ],
       },
       subQuery: false,
       include: [
@@ -112,8 +108,14 @@ module.exports = {
           required: true,
         },
         {
-          model: InvoiceDetail,
-          as: 'invoiceDetails',
+          model: Item,
+          as: 'item',
+          attributes: ['id', 'itemName'],
+          required: true,
+        },
+        {
+          model: Invoice,
+          as: 'invoice',
           required: true,
           include: [
             {
@@ -122,11 +124,6 @@ module.exports = {
               attributes: ['id', 'fullName', 'commission'],
               required: true,
             },
-            {
-              model: Item,
-              as: 'item',
-              attributes: ['id', 'itemName']
-            }
           ]
         }
       ],
@@ -135,52 +132,18 @@ module.exports = {
       return exits.serverError(err);
     });
 
-    const totalInvoiceAmount = invoiceList.reduce(
-      (accumulator, currentValue) => accumulator + Number(currentValue.totalAmount), 0);
+    const totalInvoiceDetailAmount = invoiceDetailList.reduce(
+      (accumulator, currentValue) => accumulator + Number(currentValue.totalPrice), 0);
 
-    const totalInvoiceDetailAmount = invoiceList.reduce(
-      (accumulator, currentValue) => accumulator + Number(currentValue.totalItemAmount), 0);
-
-    const totalGeneralAmount = invoiceList.reduce(
+    const totalGeneralAmount = invoiceDetailList.reduce(
       (accumulator, currentValue) => accumulator + Number(currentValue.generalFee), 0);
 
-    const totalLaborAmount = invoiceList.reduce(
+    const totalLaborAmount = invoiceDetailList.reduce(
       (accumulator, currentValue) => accumulator + Number(currentValue.laborFee), 0);
 
     const workbook = new ExcelJS.Workbook();
     workbook.creator = this.req.user.username;
     workbook.modified = new Date();
-
-    // pageSetup settings for A4 - landscape
-    const invoiceListWorksheet = workbook.addWorksheet(`နယ်ပို့စာရင်းများ`, {
-      pageSetup: { paperSize: 9, orientation: 'landscape' }
-    });
-
-    invoiceListWorksheet.columns = [
-      { header: 'နယ်ပို့နံပါတ်', key: 'invoiceNo' },
-      { header: 'ရက်စွဲ', key: 'invoiceDate' },
-      { header: 'ပွဲရုံအမည်', key: 'vendorName' },
-      { header: 'အထွေထွေ အခကြေးငွေ', key: 'generalFee' },
-      { header: 'အလုပ်သမား အခကြေးငွေ', key: 'laborFee' },
-      { header: 'စုစုပေါင်းကုန်တန်ဖိုး', key: 'totalItemAmount' },
-      { header: 'သင့်ငွေ', key: 'totalAmount' },
-    ];
-
-    invoiceListWorksheet.columns.forEach(column => {
-      column.width = column.header.length < 12 ? 12 : column.header.length;
-      column.font = {
-        name: 'Arial',
-        size: 11,
-      };
-    });
-
-    invoiceListWorksheet.getRow(1).font = {
-      name: 'Arial',
-      bold: true,
-      size: 11
-    };
-    invoiceListWorksheet.getRow(1).height = 20;
-    invoiceListWorksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
 
     // Invoice Details Work Sheet Config
     const invoiceDetailsWorksheet = workbook.addWorksheet(`နယ်ပို့စာရင်းအသေးစိတ်`, {
@@ -190,14 +153,15 @@ module.exports = {
     });
 
     invoiceDetailsWorksheet.columns = [
-      { header: 'နယ်ပို့နံပါတ်', key: 'invoiceNo' },
       { header: 'ရက်စွဲ', key: 'invoiceDate' },
       { header: 'ပွဲရုံအမည်', key: 'vendorName' },
       { header: 'ကုန်သည်အမည်', key: 'customerName' },
       { header: 'ငါးအမည်', key: 'itemName' },
       { header: 'အရေအတွက်', key: 'qty' },
-      { header: 'စျေးနှုန်း', key: 'unitPrice' },
       { header: 'အလေးချိန်', key: 'weight' },
+      { header: 'စျေးနှုန်း', key: 'unitPrice' },
+      { header: 'အလုပ်သမားခ', key: 'laborFee' },
+      { header: 'အထွေထွေခ', key: 'generalFee' },
       { header: 'စုစုပေါင်းတန်ဖိုး', key: 'totalPrice' },
     ];
 
@@ -217,30 +181,19 @@ module.exports = {
     invoiceDetailsWorksheet.getRow(1).height = 20;
     invoiceDetailsWorksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
 
-    for (let invoice of invoiceList) {
-      invoiceListWorksheet.addRow({
-        invoiceNo: invoice.invoiceNo,
-        invoiceDate: invoice.invoiceDate,
-        vendorName: invoice.vendor.vendorName,
-        generalFee: invoice.generalFee,
-        laborFee: invoice.laborFee,
-        totalItemAmount: invoice.totalItemAmount,
-        totalAmount: invoice.totalAmount,
+    for (let invoiceDetail of invoiceDetailList) {
+      invoiceDetailsWorksheet.addRow({
+        invoiceDate: invoiceDetail.invoice.invoiceDate,
+        vendorName: invoiceDetail.vendor.vendorName,
+        customerName: invoiceDetail.invoice.customer.fullName,
+        itemName: invoiceDetail.item.itemName,
+        qty: invoiceDetail.qty,
+        unitPrice: invoiceDetail.unitPrice,
+        weight: invoiceDetail.weight,
+        laborFee: invoiceDetail.laborFee,
+        generalFee: invoiceDetail.generalFee,
+        totalPrice: invoiceDetail.totalPrice,
       });
-
-      for (let invoiceDetail of invoice.invoiceDetails) {
-        invoiceDetailsWorksheet.addRow({
-          invoiceNo: invoice.invoiceNo,
-          invoiceDate: invoice.invoiceDate,
-          vendorName: invoice.vendor.vendorName,
-          customerName: invoiceDetail.customer.fullName,
-          itemName: invoiceDetail.item.itemName,
-          qty: invoiceDetail.qty,
-          unitPrice: invoiceDetail.unitPrice,
-          weight: invoiceDetail.weight,
-          totalPrice: invoiceDetail.totalPrice,
-        });
-      }
     }
 
     // Invoice Details Work Sheet Config
@@ -254,7 +207,6 @@ module.exports = {
       { header: 'သွင်းငွေ', key: 'paidAmount' },
       { header: 'ပေးဆောင်ပုံ', key: 'paidBy' },
       { header: 'ငွေလွှဲနံပါတ်', key: 'transactionNo' },
-      { header: 'ကျန်ငွေ', key: 'leftAmount' },
     ];
 
     vendorPaymentsWorksheet.columns.forEach(column => {
@@ -281,7 +233,6 @@ module.exports = {
         paidAmount: vendorPayment.paidAmount,
         paidBy: vendorPayment.paidBy,
         transactionNo: vendorPayment.transactionNo,
-        leftAmount: Number(vendorPayment.dataValues.totalInvoiceAmount) - Number(vendorPayment.dataValues.totalPaidAmount),
       });
     }
 
@@ -293,8 +244,7 @@ module.exports = {
     totalInvoiceSummaryWorksheet.columns = [
       { header: 'စုစုပေါင်းအလုပ်သမား အခကြေးငွေ', key: 'totalLaborAmount' },
       { header: 'စုစုပေါင်းအထွေထွေ အခကြေးငွေ', key: 'totalGeneralAmount' },
-      { header: 'စုစုပေါင်းကုန်တန်ဖိုး', key: 'totalInvoiceDetailAmount' },
-      { header: 'စုစုပေါင်းသင့်ငွေ ', key: 'totalInvoiceAmount' },
+      { header: 'စုစုပေါင်းတန်ဖိုး ', key: 'totalInvoiceDetailAmount' },
       { header: 'စုစုပေါင်းသွင်းငွေတန်ဖိုး', key: 'totalPaidAmount' },
       { header: 'စုစုပေါင်းကျန်ငွေ', key: 'totalLeftAmount' },
     ];
@@ -320,8 +270,7 @@ module.exports = {
       totalLaborAmount: totalLaborAmount,
       totalGeneralAmount: totalGeneralAmount,
       totalInvoiceDetailAmount: totalInvoiceDetailAmount,
-      totalInvoiceAmount: totalInvoiceAmount,
-      totalLeftAmount: Number(totalInvoiceAmount) - Number(totalPaidAmount),
+      totalLeftAmount: Number(totalInvoiceDetailAmount) - Number(totalPaidAmount),
     });
 
     const fileName = `SarYin(${new Date(fromDate).toDateString()} To ${new Date(toDate).toDateString()}).xlsx`;

@@ -68,7 +68,7 @@ module.exports = {
         }],
       [Op.or]: [
         {
-          '$vendor.vendor_name$': {
+          '$customer.full_name$': {
             [Op.substring]: search,
           },
         },
@@ -77,7 +77,10 @@ module.exports = {
 
     if (column && direction) {
       if (column.indexOf('vendor') !== -1) {
-        orderTerm = [[{ model: Vendor, as: 'vendor' }, column.substr(column.indexOf('.') + 1), direction.toUpperCase()]];
+        orderTerm = [[
+          { model: Vendor, as: 'vendor' },
+          column.substr(column.indexOf('.') + 1), direction.toUpperCase()
+        ]];
       } else {
         orderTerm = [[column, direction.toUpperCase()]];
       }
@@ -89,15 +92,14 @@ module.exports = {
       subQuery: false,
       include: [
         {
-          model: Vendor,
-          as: 'vendor',
-          attributes: ['id', 'vendorName'],
+          model: Customer,
+          as: 'customer',
+          attributes: ['id', 'fullName', 'commission'],
           required: true,
         },
         {
           model: InvoiceDetail,
           as: 'invoiceDetails',
-          required: true,
           include: [
             {
               model: Item,
@@ -105,9 +107,9 @@ module.exports = {
               attributes: ['id', 'itemName']
             },
             {
-              model: Customer,
-              as: 'customer',
-              attributes: ['id', 'fullName', 'commission'],
+              model: Vendor,
+              as: 'vendor',
+              attributes: ['id', 'vendorName'],
             },
           ]
         }
@@ -120,15 +122,6 @@ module.exports = {
     const totalInvoiceAmount = invoiceList.reduce(
       (accumulator, currentValue) => accumulator + Number(currentValue.totalAmount), 0);
 
-    const totalInvoiceDetailAmount = invoiceList.reduce(
-      (accumulator, currentValue) => accumulator + Number(currentValue.totalItemAmount), 0);
-
-    const totalGeneralAmount = invoiceList.reduce(
-      (accumulator, currentValue) => accumulator + Number(currentValue.generalFee), 0);
-
-    const totalLaborAmount = invoiceList.reduce(
-      (accumulator, currentValue) => accumulator + Number(currentValue.laborFee), 0);
-
     const workbook = new ExcelJS.Workbook();
     workbook.creator = this.req.user.username;
     workbook.modified = new Date();
@@ -139,12 +132,8 @@ module.exports = {
     });
 
     invoiceListWorksheet.columns = [
-      { header: 'နယ်ပို့နံပါတ်', key: 'invoiceNo' },
       { header: 'ရက်စွဲ', key: 'invoiceDate' },
-      { header: 'ပွဲရုံအမည်', key: 'vendorName' },
-      { header: 'အထွေထွေ အခကြေးငွေ', key: 'generalFee' },
-      { header: 'အလုပ်သမား အခကြေးငွေ', key: 'laborFee' },
-      { header: 'စုစုပေါင်းကုန်တန်ဖိုး', key: 'totalItemAmount' },
+      { header: 'ကုန်သည်အမည်', key: 'customerName' },
       { header: 'သင့်ငွေ', key: 'totalAmount' },
     ];
 
@@ -170,14 +159,15 @@ module.exports = {
     });
 
     invoiceDetailsWorksheet.columns = [
-      { header: 'နယ်ပို့နံပါတ်', key: 'invoiceNo' },
       { header: 'ရက်စွဲ', key: 'invoiceDate' },
       { header: 'ပွဲရုံအမည်', key: 'vendorName' },
       { header: 'ကုန်သည်အမည်', key: 'customerName' },
       { header: 'ငါးအမည်', key: 'itemName' },
       { header: 'အရေအတွက်', key: 'qty' },
-      { header: 'စျေးနှုန်း', key: 'unitPrice' },
       { header: 'အလေးချိန်', key: 'weight' },
+      { header: 'စျေးနှုန်း', key: 'unitPrice' },
+      { header: 'အလုပ်သမားခ', key: 'laborFee' },
+      { header: 'အထွေထွေခ', key: 'generalFee' },
       { header: 'စုစုပေါင်းတန်ဖိုး', key: 'totalPrice' },
     ];
 
@@ -199,25 +189,22 @@ module.exports = {
 
     for (let invoice of invoiceList) {
       invoiceListWorksheet.addRow({
-        invoiceNo: invoice.invoiceNo,
         invoiceDate: invoice.invoiceDate,
-        vendorName: invoice.vendor.vendorName,
-        generalFee: invoice.generalFee,
-        laborFee: invoice.laborFee,
-        totalItemAmount: invoice.totalItemAmount,
+        customerName: invoice.customer.fullName,
         totalAmount: invoice.totalAmount,
       });
 
       for (let invoiceDetail of invoice.invoiceDetails) {
         invoiceDetailsWorksheet.addRow({
-          invoiceNo: invoice.invoiceNo,
           invoiceDate: invoice.invoiceDate,
-          vendorName: invoice.vendor.vendorName,
-          customerName: invoiceDetail.customer.fullName,
+          customerName: invoice.customer.fullName,
+          vendorName: invoiceDetail.vendor.vendorName,
           itemName: invoiceDetail.item.itemName,
           qty: invoiceDetail.qty,
           unitPrice: invoiceDetail.unitPrice,
           weight: invoiceDetail.weight,
+          laborFee: invoiceDetail.laborFee,
+          generalFee: invoiceDetail.generalFee,
           totalPrice: invoiceDetail.totalPrice,
         });
       }
@@ -229,10 +216,7 @@ module.exports = {
     });
 
     totalInvoiceSummaryWorksheet.columns = [
-      { header: 'စုစုပေါင်းအလုပ်သမား အခကြေးငွေ', key: 'totalLaborAmount' },
-      { header: 'စုစုပေါင်းအထွေထွေ အခကြေးငွေ', key: 'totalGeneralAmount' },
-      { header: 'စုစုပေါင်းကုန်တန်ဖိုး', key: 'totalInvoiceDetailAmount' },
-      { header: 'စုစုပေါင်းသင့်ငွေ ', key: 'totalInvoiceAmount' },
+      { header: 'စုစုပေါင်းသင့်ငွေ', key: 'totalInvoiceAmount' },
     ];
 
     totalInvoiceSummaryWorksheet.columns.forEach(column => {
@@ -252,9 +236,6 @@ module.exports = {
     totalInvoiceSummaryWorksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
 
     totalInvoiceSummaryWorksheet.addRow({
-      totalLaborAmount: totalLaborAmount,
-      totalGeneralAmount: totalGeneralAmount,
-      totalInvoiceDetailAmount: totalInvoiceDetailAmount,
       totalInvoiceAmount: totalInvoiceAmount,
     });
 

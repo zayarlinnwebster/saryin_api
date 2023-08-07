@@ -80,7 +80,7 @@ module.exports = {
         }],
       [Op.or]: [
         {
-          '$vendor.vendor_name$': {
+          '$customer.full_name$': {
             [Op.substring]: search,
           },
         },
@@ -88,8 +88,11 @@ module.exports = {
     };
 
     if (column && direction) {
-      if (column.indexOf('vendor') !== -1) {
-        orderTerm = [[{ model: Vendor, as: 'vendor' }, column.substr(column.indexOf('.') + 1), direction.toUpperCase()]];
+      if (column.indexOf('customer') !== -1) {
+        orderTerm = [[
+          { model: Customer, as: 'customer' },
+          column.substr(column.indexOf('.') + 1), direction.toUpperCase()
+        ]];
       } else {
         orderTerm = [[column, direction.toUpperCase()]];
       }
@@ -101,9 +104,9 @@ module.exports = {
       limit: limit,
       include: [
         {
-          model: Vendor,
-          as: 'vendor',
-          attributes: ['id', 'vendorName'],
+          model: Customer,
+          as: 'customer',
+          attributes: ['id', 'fullName', 'commission'],
           required: true,
         },
         {
@@ -113,12 +116,14 @@ module.exports = {
             {
               model: Item,
               as: 'item',
-              attributes: ['id', 'itemName']
+              attributes: ['id', 'itemName'],
+              required: true,
             },
             {
-              model: Customer,
-              as: 'customer',
-              attributes: ['id', 'fullName', 'commission'],
+              model: Vendor,
+              as: 'vendor',
+              attributes: ['id', 'vendorName'],
+              required: true,
             },
           ]
         }
@@ -136,15 +141,14 @@ module.exports = {
       subQuery: false,
       include: [
         {
-          model: Vendor,
-          as: 'vendor',
-          attributes: ['id', 'vendorName'],
+          model: Customer,
+          as: 'customer',
+          attributes: ['id', 'fullName', 'commission'],
           required: true,
         },
         {
           model: InvoiceDetail,
           as: 'invoiceDetails',
-          required: true,
           include: [
             {
               model: Item,
@@ -152,9 +156,9 @@ module.exports = {
               attributes: ['id', 'itemName']
             },
             {
-              model: Customer,
-              as: 'customer',
-              attributes: ['id', 'fullName', 'commission'],
+              model: Vendor,
+              as: 'vendor',
+              attributes: ['id', 'vendorName'],
             },
           ]
         }
@@ -167,23 +171,11 @@ module.exports = {
     const totalInvoiceAmount = invoiceList.reduce(
       (accumulator, currentValue) => accumulator + Number(currentValue.totalAmount), 0);
 
-    const totalInvoiceDetailAmount = invoiceList.reduce(
-      (accumulator, currentValue) => accumulator + Number(currentValue.totalItemAmount), 0);
-
-    const totalGeneralAmount = invoiceList.reduce(
-      (accumulator, currentValue) => accumulator + Number(currentValue.generalFee), 0);
-
-    const totalLaborAmount = invoiceList.reduce(
-      (accumulator, currentValue) => accumulator + Number(currentValue.laborFee), 0);
-
     return exits.success({
       totalCounts: invoiceCount,
       data: invoiceList,
       totalAmount: {
         totalInvoiceAmount,
-        totalGeneralAmount,
-        totalInvoiceDetailAmount,
-        totalLaborAmount
       }
     });
 

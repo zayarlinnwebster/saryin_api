@@ -62,7 +62,7 @@ module.exports = {
         'paymentDate',
         [literal('(SELECT SUM(`CustomerPayment`.`paid_amount`) FROM `customer_payment` AS `CustomerPayment` WHERE `CustomerPayment`.`customer_id` = `customer`.`id` AND (DATE(`payment_date`) >= \'' + fromDate + '\' AND DATE(`payment_date`) <= \'' + toDate + '\'))'), 'totalPaidAmount'],
         // eslint-disable-next-line quotes
-        [literal("(SELECT SUM(`InvoiceDetail`.`total_price`) FROM `invoice` AS `Invoice` INNER JOIN `invoice_detail` as `InvoiceDetail` ON `Invoice`.`id` = `InvoiceDetail`.`invoice_id` WHERE `InvoiceDetail`.`customer_id` = `customer`.`id` AND (DATE(`Invoice`.`invoice_date`) >= '" + fromDate + "' AND DATE(`Invoice`.`invoice_date`) <= '" + toDate + "'))"), 'totalInvoiceAmount'],
+        [literal("(SELECT SUM(`InvoiceDetail`.`total_price`) FROM `invoice` AS `Invoice` INNER JOIN `invoice_detail` as `InvoiceDetail` ON `Invoice`.`id` = `InvoiceDetail`.`invoice_id` WHERE `Invoice`.`customer_id` = `customer`.`id` AND (DATE(`Invoice`.`invoice_date`) >= '" + fromDate + "' AND DATE(`Invoice`.`invoice_date`) <= '" + toDate + "'))"), 'totalInvoiceAmount'],
       ],
       where: {
         paymentDate: {
@@ -96,35 +96,28 @@ module.exports = {
             },
           },
           {
-            customerId: id
+            '$invoice.customer_id$': id
           }
-        ],
-        [Op.or]: [
-          {
-            '$invoice.vendor.vendor_name$': {
-              [Op.substring]: search,
-            },
-          },
         ],
       },
       subQuery: false,
       include: [
         {
-          model: Customer,
-          as: 'customer',
-          attributes: ['id', 'fullName', 'commission'],
+          model: Vendor,
+          as: 'vendor',
+          attributes: ['id', 'vendorName'],
           required: true,
         },
         {
           model: Invoice,
           as: 'invoice',
           required: true,
-          attributes: ['invoiceNo', 'invoiceDate'],
+          attributes: ['invoiceDate'],
           include: [
             {
-              model: Vendor,
-              as: 'vendor',
-              attributes: ['id', 'vendorName'],
+              model: Customer,
+              as: 'customer',
+              attributes: ['id', 'fullName', 'commission'],
               required: true,
             },
           ]
@@ -132,7 +125,8 @@ module.exports = {
         {
           model: Item,
           as: 'item',
-          attributes: ['id', 'itemName']
+          attributes: ['id', 'itemName'],
+          required: true,
         }
       ]
     }).catch((err) => {
@@ -142,6 +136,12 @@ module.exports = {
 
     const totalInvoiceDetailAmount = invoiceDetailList.reduce(
       (accumulator, currentValue) => accumulator + Number(currentValue.totalPrice), 0);
+
+    const totalGeneralAmount = invoiceDetailList.reduce(
+      (accumulator, currentValue) => accumulator + Number(currentValue.generalFee), 0);
+
+    const totalLaborAmount = invoiceDetailList.reduce(
+      (accumulator, currentValue) => accumulator + Number(currentValue.laborFee), 0);
 
     const workbook = new ExcelJS.Workbook();
     workbook.creator = this.req.user.username;
@@ -158,7 +158,6 @@ module.exports = {
       { header: 'လွှဲငွေ', key: 'paidAmount' },
       { header: 'ပေးဆောင်ပုံ', key: 'paidBy' },
       { header: 'ငွေလွှဲနံပါတ်', key: 'transactionNo' },
-      { header: 'ကျန်ငွေ', key: 'leftAmount' },
     ];
 
     customerPaymentsWorksheet.columns.forEach(column => {
@@ -185,7 +184,6 @@ module.exports = {
         paidAmount: customerPayment.paidAmount,
         paidBy: customerPayment.paidBy,
         transactionNo: customerPayment.transactionNo,
-        leftAmount: Number(customerPayment.dataValues.totalInvoiceAmount) - Number(customerPayment.dataValues.totalPaidAmount),
       });
     }
 
@@ -195,14 +193,15 @@ module.exports = {
     });
 
     invoiceDetailsWorksheet.columns = [
-      { header: 'နယ်ပို့နံပါတ်', key: 'invoiceNo' },
       { header: 'ရက်စွဲ', key: 'invoiceDate' },
       { header: 'ပွဲရုံအမည်', key: 'vendorName' },
       { header: 'ကုန်သည်အမည်', key: 'customerName' },
       { header: 'ငါးအမည်', key: 'itemName' },
       { header: 'အရေအတွက်', key: 'qty' },
-      { header: 'စျေးနှုန်း', key: 'unitPrice' },
       { header: 'အလေးချိန်', key: 'weight' },
+      { header: 'စျေးနှုန်း', key: 'unitPrice' },
+      { header: 'အလုပ်သမားခ', key: 'laborFee' },
+      { header: 'အထွေထွေခ', key: 'generalFee' },
       { header: 'စုစုပေါင်းတန်ဖိုး', key: 'totalPrice' },
     ];
 
@@ -225,14 +224,15 @@ module.exports = {
 
     for (let invoiceDetail of invoiceDetailList) {
       invoiceDetailsWorksheet.addRow({
-        invoiceNo: invoiceDetail.invoice.invoiceNo,
         invoiceDate: invoiceDetail.invoice.invoiceDate,
-        vendorName: invoiceDetail.invoice.vendor.vendorName,
-        customerName: invoiceDetail.customer.fullName,
+        vendorName: invoiceDetail.vendor.vendorName,
+        customerName: invoiceDetail.invoice.customer.fullName,
         itemName: invoiceDetail.item.itemName,
         qty: invoiceDetail.qty,
         unitPrice: invoiceDetail.unitPrice,
         weight: invoiceDetail.weight,
+        laborFee: invoiceDetail.laborFee,
+        generalFee: invoiceDetail.generalFee,
         totalPrice: invoiceDetail.totalPrice,
       });
     }
@@ -243,10 +243,12 @@ module.exports = {
     });
 
     totalInvoiceSummaryWorksheet.columns = [
-      { header: 'စုစုပေါင်းလွှဲငွေတန်ဖိုး', key: 'totalPaidAmount' },
-      { header: 'စုစုပေါင်းကုန်တန်ဖိုး', key: 'totalInvoiceDetailAmount' },
+      { header: 'စုစုပေါင်းအလုပ်သမား အခကြေးငွေ', key: 'totalLaborAmount' },
+      { header: 'စုစုပေါင်းအထွေထွေ အခကြေးငွေ', key: 'totalGeneralAmount' },
+      { header: 'စုစုပေါင်းတန်ဖိုး ', key: 'totalInvoiceDetailAmount' },
       { header: 'ကော်မရှင် (ရာခိုင်နှုန်း)', key: 'commission' },
       { header: 'ကော်မရှင်ခ', key: 'totalCommissionAmount' },
+      { header: 'စုစုပေါင်းလွှဲငွေတန်ဖိုး', key: 'totalPaidAmount' },
       { header: 'စုစုပေါင်းကျန်ငွေ', key: 'totalLeftAmount' },
     ];
 
@@ -266,15 +268,17 @@ module.exports = {
     totalInvoiceSummaryWorksheet.getRow(1).height = 20;
     totalInvoiceSummaryWorksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
 
-    const customerCommission = invoiceDetailList[0].customer.commission;
+    const customerCommission = invoiceDetailList[0].invoice.customer.commission;
     const totalCommissionAmount = (totalInvoiceDetailAmount * customerCommission) / 100;
 
     totalInvoiceSummaryWorksheet.addRow({
-      totalPaidAmount: totalPaidAmount,
       totalInvoiceDetailAmount: totalInvoiceDetailAmount,
+      totalLaborAmount: totalLaborAmount,
+      totalPaidAmount: totalPaidAmount,
+      totalGeneralAmount: totalGeneralAmount,
       commission: customerCommission + ' %',
-      totalCommissionAmount: totalCommissionAmount,
-      totalLeftAmount: Number(totalInvoiceDetailAmount) - Number(totalPaidAmount) + Number(totalCommissionAmount),
+      totalCommissionAmount: Math.round(totalCommissionAmount),
+      totalLeftAmount: Math.round(Number(totalInvoiceDetailAmount) - Number(totalPaidAmount) + Number(totalCommissionAmount)),
     });
 
     const fileName = `SarYin(${new Date(fromDate).toDateString()} To ${new Date(toDate).toDateString()}).xlsx`;

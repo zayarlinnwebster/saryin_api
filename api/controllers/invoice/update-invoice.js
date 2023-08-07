@@ -21,27 +21,12 @@ module.exports = {
       required: true,
     },
 
-    totalItemAmount: {
-      type: 'number',
-      required: true,
-    },
-
-    laborFee: {
-      type: 'number',
-      required: true,
-    },
-
-    generalFee: {
-      type: 'number',
-      required: true,
-    },
-
     totalAmount: {
       type: 'number',
       required: true,
     },
 
-    vendorId: {
+    customerId: {
       type: 'number',
       required: true,
     },

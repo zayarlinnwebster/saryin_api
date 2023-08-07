@@ -71,7 +71,7 @@ module.exports = {
     search = search.trim() || '';
     let orderTerm = [];
 
-    const invoiceSearch = {
+    const invoiceDetailSearch = {
       [Op.and]: [
         {
           '$invoice.invoice_date$': {
@@ -80,12 +80,12 @@ module.exports = {
         }],
       [Op.or]: [
         {
-          '$invoice.vendor.vendor_name$': {
+          '$invoice.customer.full_name$': {
             [Op.substring]: search,
           },
         },
         {
-          '$customer.full_name$': {
+          '$vendor.vendor_name$': {
             [Op.substring]: search,
           },
         },
@@ -99,27 +99,40 @@ module.exports = {
 
     if (column && direction) {
       if (column.indexOf('vendor') !== -1) {
-        orderTerm = [[{ model: Invoice, as: 'invoice' }, { model: Vendor, as: 'vendor' }, column.substr(column.indexOf('.') + 1), direction.toUpperCase()]];
+        orderTerm = [[
+          { model: Vendor, as: 'vendor' },
+          column.substr(column.indexOf('.') + 1), direction.toUpperCase()
+        ]];
       } else if (column.indexOf('invoice') !== -1) {
-        orderTerm = [[{ model: Invoice, as: 'invoice' }, column.substr(column.indexOf('.') + 1), direction.toUpperCase()]];
+        orderTerm = [[
+          { model: Invoice, as: 'invoice' },
+          column.substr(column.indexOf('.') + 1), direction.toUpperCase()
+        ]];
       } else if (column.indexOf('item') !== -1) {
-        orderTerm = [[{ model: Item, as: 'item' }, column.substr(column.indexOf('.') + 1), direction.toUpperCase()]];
+        orderTerm = [[
+          { model: Item, as: 'item' },
+          column.substr(column.indexOf('.') + 1), direction.toUpperCase()
+        ]];
       } else if (column.indexOf('customer') !== -1) {
-        orderTerm = [[{ model: Customer, as: 'customer' }, column.substr(column.indexOf('.') + 1), direction.toUpperCase()]];
+        orderTerm = [[
+          { model: Invoice, as: 'invoice' },
+          { model: Customer, as: 'customer' },
+          column.substr(column.indexOf('.') + 1), direction.toUpperCase()
+        ]];
       } else {
         orderTerm = [[column, direction.toUpperCase()]];
       }
     }
 
     const invoiceDetailCount = await InvoiceDetail.count({
-      where: invoiceSearch,
+      where: invoiceDetailSearch,
       offset: limit * (page - 1),
       limit: limit,
       include: [
         {
-          model: Customer,
-          as: 'customer',
-          attributes: ['id', 'fullName', 'commission'],
+          model: Vendor,
+          as: 'vendor',
+          attributes: ['id', 'vendorName'],
           required: true,
         },
         {
@@ -128,15 +141,11 @@ module.exports = {
           required: true,
           include: [
             {
-              model: Vendor,
-              as: 'vendor',
-              attributes: ['id', 'vendorName'],
+              model: Customer,
+              as: 'customer',
+              attributes: ['id', 'fullName', 'commission'],
               required: true,
             },
-            {
-              model: InvoiceDetail,
-              as: 'invoiceDetails',
-            }
           ]
         },
         {
@@ -152,28 +161,27 @@ module.exports = {
     });
 
     const invoiceDetailList = await InvoiceDetail.findAll({
-      where: invoiceSearch,
+      where: invoiceDetailSearch,
       offset: limit * (page - 1),
       limit: limit,
       order: orderTerm,
       subQuery: false,
       include: [
         {
-          model: Customer,
-          as: 'customer',
-          attributes: ['id', 'fullName', 'commission'],
+          model: Vendor,
+          as: 'vendor',
+          attributes: ['id', 'vendorName'],
           required: true,
         },
         {
           model: Invoice,
           as: 'invoice',
           required: true,
-          attributes: ['invoiceNo', 'invoiceDate'],
           include: [
             {
-              model: Vendor,
-              as: 'vendor',
-              attributes: ['id', 'vendorName'],
+              model: Customer,
+              as: 'customer',
+              attributes: ['id', 'fullName', 'commission'],
               required: true,
             },
           ]
@@ -193,11 +201,19 @@ module.exports = {
     const totalInvoiceDetailAmount = invoiceDetailList.reduce(
       (accumulator, currentValue) => accumulator + Number(currentValue.totalPrice), 0);
 
+    const totalGeneralAmount = invoiceDetailList.reduce(
+      (accumulator, currentValue) => accumulator + Number(currentValue.generalFee), 0);
+
+    const totalLaborAmount = invoiceDetailList.reduce(
+      (accumulator, currentValue) => accumulator + Number(currentValue.laborFee), 0);
+
     return exits.success({
       totalCounts: invoiceDetailCount,
       data: invoiceDetailList,
       totalAmount: {
         totalInvoiceDetailAmount,
+        totalGeneralAmount,
+        totalLaborAmount
       }
     });
 

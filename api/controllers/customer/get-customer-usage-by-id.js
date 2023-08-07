@@ -69,7 +69,7 @@ module.exports = {
       where: {
         [Op.or]: [
           {
-            '$invoice.vendor.vendor_name$': {
+            '$vendor.vendor_name$': {
               [Op.substring]: search,
             },
           },
@@ -77,20 +77,22 @@ module.exports = {
         '$invoice.invoice_date$': {
           [Op.between]: [fromDate, toDate]
         },
-        customerId: id,
+        '$invoice.customer_id$': id,
       },
-      include: {
-        model: Invoice,
-        as: 'invoice',
-        attributes: [],
-        required: true,
-        include: {
+      include: [
+        {
+          model: Invoice,
+          as: 'invoice',
+          attributes: [],
+          required: true,
+        },
+        {
           model: Vendor,
           as: 'vendor',
           attributes: [],
           required: true,
         }
-      },
+      ]
     }).catch((err) => {
       console.log(err);
       return exits.serverError(err);

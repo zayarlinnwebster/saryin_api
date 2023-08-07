@@ -65,12 +65,31 @@ module.exports = {
       return exits.serverError(err);
     });
 
-    const totalVendorInvoice = await Invoice.sum('totalAmount', {
+    const totalVendorInvoice = await InvoiceDetail.sum('totalPrice', {
       where: {
-        invoiceDate: {
+        [Op.or]: [
+          {
+            '$invoice.customer.full_name$': {
+              [Op.substring]: search,
+            },
+          },
+        ],
+        '$invoice.invoice_date$': {
           [Op.between]: [fromDate, toDate]
         },
         vendorId: id,
+      },
+      include: {
+        model: Invoice,
+        as: 'invoice',
+        attributes: [],
+        required: true,
+        include: {
+          model: Customer,
+          as: 'customer',
+          attributes: [],
+          required: true,
+        }
       },
     }).catch((err) => {
       console.log(err);

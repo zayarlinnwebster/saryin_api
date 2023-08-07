@@ -83,6 +83,43 @@ module.exports = {
       }
     },
 
+    laborFee: {
+      type: DECIMAL(19, 2).UNSIGNED,
+      allowNull: false,
+      validate: {
+        notEmpty: {
+          args: true,
+          msg: 'laborFee cannot be empty'
+        },
+        notNull: {
+          args: true,
+          msg: 'laborFee must be required'
+        },
+        min: {
+          args: [0],
+          msg: 'laborFee must be greater than or equal to 0',
+        },
+      }
+    },
+
+    generalFee: {
+      type: DECIMAL(19, 2).UNSIGNED,
+      allowNull: false,
+      validate: {
+        notEmpty: {
+          args: true,
+          msg: 'generalFee cannot be empty'
+        },
+        notNull: {
+          args: true,
+          msg: 'generalFee must be required'
+        },
+        min: {
+          args: [0],
+          msg: 'generalFee must be greater than or equal to 0',
+        },
+      }
+    },
 
   },
 
@@ -104,15 +141,15 @@ module.exports = {
       onUpdate: 'CASCADE',
     });
 
-    InvoiceDetail.belongsTo(Customer, {
-      as: 'customer',
+    InvoiceDetail.belongsTo(Vendor, {
+      as: 'vendor',
       foreignKey: {
-        name: 'customerId',
+        name: 'vendorId',
         allowNull: false,
         validate: {
           notNull: {
             args: true,
-            msg: 'customerId must be required'
+            msg: 'vendorId must be required'
           },
         }
       },

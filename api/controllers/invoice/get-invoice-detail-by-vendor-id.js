@@ -3,7 +3,7 @@ const { Op } = require('sequelize');
 module.exports = {
 
 
-  friendlyName: 'Get invoice by customer id',
+  friendlyName: 'Get invoice by vendor id',
 
 
   description: '',
@@ -16,6 +16,11 @@ module.exports = {
       required: true,
     },
 
+    search: {
+      type: 'string',
+      allowNull: true,
+    },
+
     page: {
       type: 'number',
       defaultsTo: 1,
@@ -26,11 +31,6 @@ module.exports = {
       type: 'number',
       defaultsTo: 1000000,
       min: 1,
-    },
-
-    search: {
-      type: 'string',
-      defaultsTo: '',
     },
 
     fromDate: {
@@ -70,9 +70,8 @@ module.exports = {
 
 
   fn: async function ({
-    id, page, limit, search, fromDate, toDate, column, direction
+    id, search, page, limit, fromDate, toDate, column, direction
   }, exits) {
-
     search = search.trim() || '';
     let orderTerm = [];
 
@@ -84,12 +83,12 @@ module.exports = {
           },
         },
         {
-          '$invoice.customer_id$': id
+          vendorId: id
         }
       ],
       [Op.or]: [
         {
-          '$vendor.vendor_name$': {
+          '$invoice.customer.full_name$': {
             [Op.substring]: search,
           },
         },
@@ -97,9 +96,10 @@ module.exports = {
     };
 
     if (column && direction && column !== 'paymentDate') {
-      if (column.indexOf('vendor') !== -1) {
+      if (column.indexOf('customer') !== -1) {
         orderTerm = [[
-          { model: Vendor, as: 'vendor' },
+          { model: Invoice, as: 'invoice' },
+          { model: Customer, as: 'customer' },
           column.substr(column.indexOf('.') + 1), direction.toUpperCase()
         ]];
       } else if (column.indexOf('invoice') !== -1) {
@@ -117,7 +117,7 @@ module.exports = {
       }
     }
 
-    const invoiceDetailCount = await InvoiceDetail.count({
+    const invoiceCount = await InvoiceDetail.count({
       where: invoiceDetailSearch,
       offset: limit * (page - 1),
       limit: limit,
@@ -190,7 +190,7 @@ module.exports = {
     });
 
     return exits.success({
-      totalCounts: invoiceDetailCount,
+      totalCounts: invoiceCount,
       data: invoiceDetailList,
     });
 

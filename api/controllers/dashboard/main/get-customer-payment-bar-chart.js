@@ -48,55 +48,21 @@ module.exports = {
     const data = [];
     search = search.trim() || '';
 
-    const customerSearch = {
-      [Op.and]: [
-        {
-          '$invoiceDetails.invoice.invoice_date$': {
-            [Op.between]: [fromDate, toDate]
-          },
-        },
-        {
-          '$payments.payment_date$': {
-            [Op.between]: [fromDate, toDate]
-          },
-        }
-      ],
-      [Op.or]: [
-        {
-          fullName: {
-            [Op.substring]: search,
-          },
-        },
-      ],
-    };
-
     const customerList = await Customer.findAll({
       attributes: [
         'fullName',
-        [literal('(SELECT SUM(`InvoiceDetail`.`total_price`) FROM `invoice` AS `Invoice` INNER JOIN `invoice_detail` as `InvoiceDetail` ON `Invoice`.`id` = `InvoiceDetail`.`invoice_id` WHERE `InvoiceDetail`.`customer_id` = `Customer`.`id`)'), 'totalInvoiceAmount'],
-        [literal('(SELECT SUM(`CustomerPayment`.`paid_amount`) FROM `customer_payment` AS `CustomerPayment` WHERE `CustomerPayment`.`customer_id` = `Customer`.`id`)'), 'totalPaidAmount'],
+        [literal('(SELECT SUM(`InvoiceDetail`.`total_price`) FROM `invoice` AS `Invoice` INNER JOIN `invoice_detail` as `InvoiceDetail` ON `Invoice`.`id` = `InvoiceDetail`.`invoice_id` WHERE `Invoice`.`customer_id` = `Customer`.`id` AND (DATE(`Invoice`.`invoice_date`) >= \'' + fromDate + '\' AND DATE(`Invoice`.`invoice_date`) <= \'' + toDate + '\'))'), 'totalInvoiceAmount'],
+        [literal('(SELECT SUM(`CustomerPayment`.`paid_amount`) FROM `customer_payment` AS `CustomerPayment` WHERE `CustomerPayment`.`customer_id` = `Customer`.`id` AND (DATE(`payment_date`) >= \'' + fromDate + '\' AND DATE(`payment_date`) <= \'' + toDate + '\'))'), 'totalPaidAmount'],
       ],
-      where: customerSearch,
-      include: [
-        {
-          model: CustomerPayment,
-          as: 'payments',
-          duplicating: false,
-          attributes: [],
-        },
-        {
-          model: InvoiceDetail,
-          as: 'invoiceDetails',
-          required: true,
-          attributes: [],
-          include: {
-            model: Invoice,
-            as: 'invoice',
-            attributes: [],
-          }
-        }
-      ],
-      group: ['Customer.id'],
+      where: {
+        [Op.or]: [
+          {
+            fullName: {
+              [Op.substring]: search,
+            },
+          },
+        ],
+      },
       order: [['totalInvoiceAmount', 'DESC']]
     }).catch((err) => {
       console.log(err);

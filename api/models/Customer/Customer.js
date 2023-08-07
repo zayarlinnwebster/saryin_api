@@ -85,8 +85,8 @@ module.exports = {
 
   associations: function () {
 
-    Customer.hasMany(InvoiceDetail, {
-      as: 'invoiceDetails',
+    Customer.hasMany(Invoice, {
+      as: 'invoices',
       foreignKey: {
         name: 'customerId',
         allowNull: false,

@@ -69,12 +69,12 @@ module.exports = {
         }],
       [Op.or]: [
         {
-          '$invoice.vendor.vendor_name$': {
+          '$invoice.customer.full_name$': {
             [Op.substring]: search,
           },
         },
         {
-          '$customer.full_name$': {
+          '$vendor.vendor_name$': {
             [Op.substring]: search,
           },
         },
@@ -88,11 +88,26 @@ module.exports = {
 
     if (column && direction) {
       if (column.indexOf('vendor') !== -1) {
-        orderTerm = [[{ model: Invoice, as: 'invoice' }, { model: Vendor, as: 'vendor' }, column.substr(column.indexOf('.') + 1), direction.toUpperCase()]];
+        orderTerm = [[
+          { model: Vendor, as: 'vendor' },
+          column.substr(column.indexOf('.') + 1), direction.toUpperCase()
+        ]];
+      } else if (column.indexOf('invoice') !== -1) {
+        orderTerm = [[
+          { model: Invoice, as: 'invoice' },
+          column.substr(column.indexOf('.') + 1), direction.toUpperCase()
+        ]];
       } else if (column.indexOf('item') !== -1) {
-        orderTerm = [[{ model: Item, as: 'item' }, column.substr(column.indexOf('.') + 1), direction.toUpperCase()]];
+        orderTerm = [[
+          { model: Item, as: 'item' },
+          column.substr(column.indexOf('.') + 1), direction.toUpperCase()
+        ]];
       } else if (column.indexOf('customer') !== -1) {
-        orderTerm = [[{ model: Customer, as: 'customer' }, column.substr(column.indexOf('.') + 1), direction.toUpperCase()]];
+        orderTerm = [[
+          { model: Invoice, as: 'invoice' },
+          { model: Customer, as: 'customer' },
+          column.substr(column.indexOf('.') + 1), direction.toUpperCase()
+        ]];
       } else {
         orderTerm = [[column, direction.toUpperCase()]];
       }
@@ -104,21 +119,21 @@ module.exports = {
       subQuery: false,
       include: [
         {
-          model: Customer,
-          as: 'customer',
-          attributes: ['id', 'fullName', 'commission'],
+          model: Vendor,
+          as: 'vendor',
+          attributes: ['id', 'vendorName'],
           required: true,
         },
         {
           model: Invoice,
           as: 'invoice',
           required: true,
-          attributes: ['invoiceNo', 'invoiceDate'],
+          attributes: ['invoiceDate'],
           include: [
             {
-              model: Vendor,
-              as: 'vendor',
-              attributes: ['id', 'vendorName'],
+              model: Customer,
+              as: 'customer',
+              attributes: ['id', 'fullName', 'commission'],
               required: true,
             },
           ]
@@ -126,7 +141,8 @@ module.exports = {
         {
           model: Item,
           as: 'item',
-          attributes: ['id', 'itemName']
+          attributes: ['id', 'itemName'],
+          required: true,
         }
       ]
     }).catch((err) => {
@@ -146,15 +162,22 @@ module.exports = {
       pageSetup: { paperSize: 9, orientation: 'landscape' }
     });
 
+    const totalGeneralAmount = invoiceDetailList.reduce(
+      (accumulator, currentValue) => accumulator + Number(currentValue.generalFee), 0);
+
+    const totalLaborAmount = invoiceDetailList.reduce(
+      (accumulator, currentValue) => accumulator + Number(currentValue.laborFee), 0);
+
     invoiceDetailsWorksheet.columns = [
-      { header: 'နယ်ပို့နံပါတ်', key: 'invoiceNo' },
       { header: 'ရက်စွဲ', key: 'invoiceDate' },
       { header: 'ပွဲရုံအမည်', key: 'vendorName' },
       { header: 'ကုန်သည်အမည်', key: 'customerName' },
       { header: 'ငါးအမည်', key: 'itemName' },
       { header: 'အရေအတွက်', key: 'qty' },
-      { header: 'စျေးနှုန်း', key: 'unitPrice' },
       { header: 'အလေးချိန်', key: 'weight' },
+      { header: 'စျေးနှုန်း', key: 'unitPrice' },
+      { header: 'အလုပ်သမားခ', key: 'laborFee' },
+      { header: 'အထွေထွေခ', key: 'generalFee' },
       { header: 'စုစုပေါင်းတန်ဖိုး', key: 'totalPrice' },
     ];
 
@@ -177,14 +200,15 @@ module.exports = {
 
     for (let invoiceDetail of invoiceDetailList) {
       invoiceDetailsWorksheet.addRow({
-        invoiceNo: invoiceDetail.invoice.invoiceNo,
         invoiceDate: invoiceDetail.invoice.invoiceDate,
-        vendorName: invoiceDetail.invoice.vendor.vendorName,
-        customerName: invoiceDetail.customer.fullName,
+        vendorName: invoiceDetail.vendor.vendorName,
+        customerName: invoiceDetail.invoice.customer.fullName,
         itemName: invoiceDetail.item.itemName,
         qty: invoiceDetail.qty,
-        unitPrice: invoiceDetail.unitPrice,
         weight: invoiceDetail.weight,
+        unitPrice: invoiceDetail.unitPrice,
+        laborFee: invoiceDetail.laborFee,
+        generalFee: invoiceDetail.generalFee,
         totalPrice: invoiceDetail.totalPrice,
       });
     }
@@ -195,6 +219,8 @@ module.exports = {
     });
 
     totalInvoiceSummaryWorksheet.columns = [
+      { header: 'စုစုပေါင်းအလုပ်သမားခ', key: 'totalLaborAmount' },
+      { header: 'စုစုပေါင်းအထွေထွေခ', key: 'totalGeneralAmount' },
       { header: 'စုစုပေါင်းတန်ဖိုး', key: 'totalInvoiceDetailAmount' },
     ];
 
@@ -216,6 +242,8 @@ module.exports = {
 
     totalInvoiceSummaryWorksheet.addRow({
       totalInvoiceDetailAmount: totalInvoiceDetailAmount,
+      totalGeneralAmount: totalGeneralAmount,
+      totalLaborAmount: totalLaborAmount,
     });
 
     const fileName = `SarYin(${new Date(fromDate).toDateString()} To ${new Date(toDate).toDateString()}).xlsx`;

@@ -48,7 +48,7 @@ module.exports = {
       attributes: [
         'id',
         'vendorName',
-        [literal('(SELECT SUM(`Invoice`.`total_amount`) FROM `invoice` AS `Invoice` WHERE `Invoice`.`vendor_id` = `Vendor`.`id`)'), 'totalInvoiceAmount'],
+        [literal('(SELECT SUM(`InvoiceDetail`.`total_price`) FROM `invoice` AS `Invoice` INNER JOIN `invoice_detail` as `InvoiceDetail` ON `Invoice`.`id` = `InvoiceDetail`.`invoice_id` WHERE `InvoiceDetail`.`vendor_id` = `Vendor`.`id`)'), 'totalInvoiceAmount'],
         [literal('(SELECT SUM(`VendorPayment`.`paid_amount`) FROM `vendor_payment` AS `VendorPayment` WHERE `VendorPayment`.`vendor_id` = `Vendor`.`id`)'), 'totalPaidAmount'],
       ],
       where: {
