@@ -75,6 +75,7 @@ module.exports = {
           model: InvoiceDetail,
           as: 'invoiceDetails',
           duplicating: false,
+          required: false,
           attributes: [],
           include: {
             model: Invoice,

@@ -5,7 +5,7 @@
  * @docs        :: https://sailsjs.com/docs/concepts/models-and-orm/models
  */
 
-const { DATEONLY, NOW, DECIMAL, STRING } = require('sequelize');
+const { DATEONLY, NOW, DECIMAL } = require('sequelize');
 
 module.exports = {
 

@@ -5,7 +5,7 @@
  * @docs        :: https://sailsjs.com/docs/concepts/models-and-orm/models
  */
 
-const { STRING, INTEGER, DECIMAL } = require('sequelize');
+const { INTEGER, DECIMAL } = require('sequelize');
 
 module.exports = {
 
@@ -31,7 +31,7 @@ module.exports = {
     },
 
     weight: {
-      type: STRING(30),
+      type: DECIMAL(19, 2).UNSIGNED,
       allowNull: false,
       validate: {
         notEmpty: {

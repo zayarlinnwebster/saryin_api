@@ -5,7 +5,7 @@
  * @docs        :: https://sailsjs.com/docs/concepts/models-and-orm/models
  */
 
-const { DATEONLY, NOW, INTEGER } = require('sequelize');
+const { DATEONLY, NOW, INTEGER, DECIMAL } = require('sequelize');
 
 module.exports = {
 
@@ -32,6 +32,21 @@ module.exports = {
           args: [1],
           msg: 'qty must be greater than or equal to 1',
         },
+      }
+    },
+
+    weight: {
+      type: DECIMAL(19, 2).UNSIGNED,
+      allowNull: false,
+      validate: {
+        notEmpty: {
+          args: true,
+          msg: 'weight cannot be empty'
+        },
+        notNull: {
+          args: true,
+          msg: 'weight must be required'
+        }
       }
     },
 

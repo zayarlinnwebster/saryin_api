@@ -1,5 +1,5 @@
 const ExcelJS = require('exceljs');
-const { Op, literal, fn, col } = require('sequelize');
+const { Op, literal } = require('sequelize');
 
 module.exports = {
 
@@ -88,6 +88,7 @@ module.exports = {
         'storeId',
         'customerId',
         [literal('(SELECT SUM(`StockItemOut`.`qty`) FROM `stock_item_out` as `StockItemOut` WHERE `StockItemOut`.`stock_item_id` = `StockItem`.`id`)'), 'totalQtyOut'],
+        [literal('(SELECT SUM(`StockItemOut`.`weight`) FROM `stock_item_out` as `StockItemOut` WHERE `StockItemOut`.`stock_item_id` = `StockItem`.`id`)'), 'totalWeightOut'],
       ],
       where: {
         [Op.and]: [
@@ -188,6 +189,7 @@ module.exports = {
       { header: 'သိုလှောင်ရုံအမည်', key: 'storeName' },
       { header: 'ငါးအမည်', key: 'itemName' },
       { header: 'အရေအတွက်', key: 'qty' },
+      { header: 'အလေးချိန်', key: 'weight' },
     ];
 
     stockItemOutsWorksheet.columns.forEach(column => {
@@ -223,6 +225,7 @@ module.exports = {
           storeName: stockItem.store.storeName,
           itemName: stockItem.item.itemName,
           qty: outItem.qty,
+          weight: outItem.weight,
         });
       }
     }

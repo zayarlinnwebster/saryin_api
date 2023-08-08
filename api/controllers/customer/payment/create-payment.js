@@ -34,11 +34,6 @@ module.exports = {
       required: true,
     },
 
-    remainingAmount: {
-      type: 'number',
-      required: true,
-    },
-
     commission: {
       type: 'number',
       required: true,

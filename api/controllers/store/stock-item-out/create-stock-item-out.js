@@ -19,6 +19,11 @@ module.exports = {
       required: true,
     },
 
+    weight: {
+      type: 'number',
+      required: true,
+    },
+
     stockItemId: {
       type: 'number',
       required: true,

@@ -53,16 +53,13 @@ module.exports = {
       subQuery: false,
     });
 
-    console.log(customerList);
-
     const totalCommissionAmount = customerList.reduce(
-      (accumulator, customer) =>
-        accumulator + (customer.dataValues.totalInvoiceAmount * customer.commission / 100),
+      (accumulator, customer) => accumulator + (Number(customer.dataValues.totalInvoiceAmount) * Number(customer.commission) / 100),
       0
     );
 
     labels.push('ကော်မရှင်');
-    data.push(totalCommissionAmount || 0);
+    data.push(Math.round(totalCommissionAmount) || 0);
 
     const customerTotalPayment = await CustomerPayment.sum('paidAmount', {
       where: {

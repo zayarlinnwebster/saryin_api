@@ -77,7 +77,6 @@ module.exports = {
       offset: limit * (page - 1),
       limit: limit,
       subQuery: false,
-      order: orderTerm,
     }).catch((err) => {
       console.log(err);
       return exits.serverError(err);

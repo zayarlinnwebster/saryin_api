@@ -24,6 +24,11 @@ module.exports = {
       required: true,
     },
 
+    weight: {
+      type: 'number',
+      required: true,
+    },
+
   },
 
 

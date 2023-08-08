@@ -1,4 +1,4 @@
-const { fn, col, Op, literal } = require('sequelize');
+const { fn, col, Op } = require('sequelize');
 
 module.exports = {
 
@@ -64,6 +64,7 @@ module.exports = {
       attributes: [
         'itemId',
         [fn('SUM', col('qty')), 'totalQty'],
+        [fn('SUM', col('weight')), 'totalWeight'],
       ],
       subQuery: false,
       where: {
@@ -90,6 +91,7 @@ module.exports = {
       attributes: [
         'stockItemId',
         [fn('SUM', col('StockItemOut.qty')), 'totalOutQty'],
+        [fn('SUM', col('StockItemOut.weight')), 'totalOutWeight'],
       ],
       subQuery: false,
       include: [
@@ -113,9 +115,17 @@ module.exports = {
     const stockItemOutMap = new Map();
     for (const stockItemOut of stockItemOutList) {
       if (stockItemOutMap.has(stockItemOut.stockItem.itemId)) {
-        stockItemOutMap.set(stockItemOut.stockItem.itemId, Number(stockItemOutMap.get(stockItemOut.stockItem.itemId)) + Number(stockItemOut.dataValues.totalOutQty));
+        stockItemOutMap.set(
+          stockItemOut.stockItem.itemId,
+          Number(stockItemOutMap.get(stockItemOut.stockItem.itemId)) + Number(stockItemOut.dataValues.totalOutQty),
+          Number(stockItemOutMap.get(stockItemOut.stockItem.itemId)) + Number(stockItemOut.dataValues.totalOutWeight)
+        );
       } else {
-        stockItemOutMap.set(stockItemOut.stockItem.itemId, stockItemOut.dataValues.totalOutQty);
+        stockItemOutMap.set(
+          stockItemOut.stockItem.itemId,
+          stockItemOut.dataValues.totalOutQty,
+          stockItemOut.dataValues.totalOutWeight
+        );
       }
     }
 
@@ -123,7 +133,9 @@ module.exports = {
     const stockItemListWithLeftQty = stockItemList.map((stockItem) => {
       let leftQty = stockItem.dataValues.totalQty - (stockItemOutMap.get(stockItem.itemId) || 0);
 
-      if (leftQty === 0) {
+      let leftWeight = stockItem.dataValues.totalWeight - (stockItemOutMap.get(stockItem.itemId) || 0);
+
+      if (leftQty === 0 && leftWeight === 0) {
         return;
       }
 
@@ -131,8 +143,11 @@ module.exports = {
         id: stockItem.item.id,
         itemName: stockItem.item.itemName,
         totalQty: stockItem.dataValues.totalQty,
-        totalOutQty: stockItemOutMap.get(stockItem.itemId) || 0, // If not found, set the totalOutQty to 0
-        leftQty: leftQty
+        totalWeight: stockItem.dataValues.totalWeight,
+        totalOutQty: stockItemOutMap.get(stockItem.itemId) || 0,
+        totalOutWeight: stockItemOutMap.get(stockItem.itemId) || 0,
+        leftQty: leftQty,
+        leftWeight: leftWeight
       });
     });
 
