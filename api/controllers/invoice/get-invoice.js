@@ -117,13 +117,11 @@ module.exports = {
               model: Item,
               as: 'item',
               attributes: ['id', 'itemName'],
-              required: true,
             },
             {
               model: Vendor,
               as: 'vendor',
               attributes: ['id', 'vendorName'],
-              required: true,
             },
           ]
         }
