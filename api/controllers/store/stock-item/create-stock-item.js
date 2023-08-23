@@ -14,6 +14,11 @@ module.exports = {
       required: true,
     },
 
+    unitPrice: {
+      type: 'number',
+      required: true,
+    },
+
     qty: {
       type: 'number',
       required: true,
@@ -35,6 +40,11 @@ module.exports = {
     },
 
     storeId: {
+      type: 'number',
+      required: true,
+    },
+
+    totalPrice: {
       type: 'number',
       required: true,
     },

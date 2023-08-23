@@ -83,8 +83,6 @@ module.exports = {
 
     const vendorCount = await Vendor.count({
       where: vendorSearch,
-      offset: limit * (page - 1),
-      limit: limit,
     }).catch((err) => {
       console.log(err);
       return exits.serverError(err);

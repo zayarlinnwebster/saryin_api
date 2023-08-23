@@ -116,8 +116,6 @@ module.exports = {
 
     const stockItemCount = await StockItem.count({
       where: stockItemSearch,
-      offset: limit * (page - 1),
-      limit: limit,
       include: [
         {
           model: Item,
@@ -147,11 +145,13 @@ module.exports = {
       attributes: [
         'id',
         'storedDate',
+        'unitPrice',
         'qty',
         'weight',
         'itemId',
         'storeId',
         'customerId',
+        'totalPrice',
         [literal('(SELECT SUM(`StockItemOut`.`weight`) FROM `stock_item_out` as `StockItemOut` WHERE `StockItemOut`.`stock_item_id` = `StockItem`.`id`)'), 'totalWeightOut'],
         [literal('(SELECT SUM(`StockItemOut`.`qty`) FROM `stock_item_out` as `StockItemOut` WHERE `StockItemOut`.`stock_item_id` = `StockItem`.`id`)'), 'totalQtyOut'],
       ],

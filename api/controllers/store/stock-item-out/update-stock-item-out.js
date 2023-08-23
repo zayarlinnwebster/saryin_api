@@ -19,12 +19,32 @@ module.exports = {
       required: true,
     },
 
+    unitPrice: {
+      type: 'number',
+      required: true,
+    },
+
     qty: {
       type: 'number',
       required: true,
     },
 
     weight: {
+      type: 'number',
+      required: true,
+    },
+
+    commission: {
+      type: 'number',
+      required: true,
+    },
+
+    commissionFee: {
+      type: 'number',
+      required: false,
+    },
+
+    totalPrice: {
       type: 'number',
       required: true,
     },

@@ -98,8 +98,6 @@ module.exports = {
 
     const customerPaymentCount = await CustomerPayment.count({
       where: customerPaymentSearch,
-      offset: limit * (page - 1),
-      limit: limit,
       include: [
         {
           model: Customer,

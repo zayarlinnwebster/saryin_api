@@ -119,8 +119,6 @@ module.exports = {
 
     const invoiceDetailCount = await InvoiceDetail.count({
       where: invoiceDetailSearch,
-      offset: limit * (page - 1),
-      limit: limit,
       include: [
         {
           model: Vendor,

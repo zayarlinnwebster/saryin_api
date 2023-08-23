@@ -98,8 +98,6 @@ module.exports = {
 
     const vendorPaymentCount = await VendorPayment.count({
       where: vendorPaymentSearch,
-      offset: limit * (page - 1),
-      limit: limit,
       include: [
         {
           model: Vendor,

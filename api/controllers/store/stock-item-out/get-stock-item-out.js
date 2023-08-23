@@ -65,8 +65,6 @@ module.exports = {
 
     const stockItemOutCount = await StockItemOut.count({
       where: stockItemSearch,
-      offset: limit * (page - 1),
-      limit: limit,
     }).catch((err) => {
       console.log(err);
       return exits.serverError(err);

@@ -96,6 +96,9 @@ module.exports.routes = {
   'GET /api/v1/store/:id/usage': {
     action: 'store/get-store-usage-by-id'
   },
+  'GET /api/v1/store/:id/usage/export': {
+    action: 'store/export-store-usage'
+  },
   'GET /api/v1/store/:id/item': {
     action: 'store/get-store-item'
   },

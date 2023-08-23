@@ -75,8 +75,6 @@ module.exports = {
 
     const storeCount = await Store.count({
       where: storeSearch,
-      offset: limit * (page - 1),
-      limit: limit,
     }).catch((err) => {
       console.log(err);
       return exits.serverError(err);

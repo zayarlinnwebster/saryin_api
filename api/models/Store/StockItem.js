@@ -16,6 +16,25 @@ module.exports = {
       defaultValue: NOW
     },
 
+    unitPrice: {
+      type: DECIMAL(19, 2).UNSIGNED,
+      allowNull: false,
+      validate: {
+        notEmpty: {
+          args: true,
+          msg: 'unitPrice cannot be empty'
+        },
+        notNull: {
+          args: true,
+          msg: 'unitPrice must be required'
+        },
+        min: {
+          args: [0],
+          msg: 'unitPrice must be greater than or equal to 0',
+        },
+      }
+    },
+
     qty: {
       type: INTEGER,
       allowNull: false,
@@ -47,6 +66,25 @@ module.exports = {
           args: true,
           msg: 'weight must be required'
         }
+      }
+    },
+
+    totalPrice: {
+      type: DECIMAL(19, 2).UNSIGNED,
+      allowNull: false,
+      validate: {
+        notEmpty: {
+          args: true,
+          msg: 'totalPrice cannot be empty'
+        },
+        notNull: {
+          args: true,
+          msg: 'totalPrice must be required'
+        },
+        min: {
+          args: [0],
+          msg: 'totalPrice must be greater than or equal to 0',
+        },
       }
     },
 

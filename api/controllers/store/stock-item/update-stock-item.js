@@ -14,6 +14,11 @@ module.exports = {
       required: true,
     },
 
+    unitPrice: {
+      type: 'number',
+      required: true,
+    },
+
     storedDate: {
       type: 'ref',
       required: true,
@@ -35,6 +40,11 @@ module.exports = {
     },
 
     customerId: {
+      type: 'number',
+      required: true,
+    },
+
+    totalPrice: {
       type: 'number',
       required: true,
     },

@@ -75,8 +75,6 @@ module.exports = {
 
     const userCount = await User.count({
       where: userSearch,
-      offset: limit * (page - 1),
-      limit: limit,
     }).catch((err) => {
       console.log(err);
       return exits.serverError(err);

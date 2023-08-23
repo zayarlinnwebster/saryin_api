@@ -113,14 +113,11 @@ module.exports = {
       return exits.serverError(err);
     });
 
-    console.log(invoiceCount);
-
     const invoiceList = await Invoice.findAll({
       where: invoiceSearch,
       offset: limit * (page - 1),
       limit: limit,
       order: orderTerm,
-      // subQuery: false,
       include: [
         {
           model: Customer,
@@ -131,19 +128,17 @@ module.exports = {
         {
           model: InvoiceDetail,
           as: 'invoiceDetails',
-          required: false,
+          required: true,
           include: [
             {
               model: Item,
               as: 'item',
               attributes: ['id', 'itemName'],
-              required: false,
             },
             {
               model: Vendor,
               as: 'vendor',
               attributes: ['id', 'vendorName'],
-              required: false,
             },
           ]
         }

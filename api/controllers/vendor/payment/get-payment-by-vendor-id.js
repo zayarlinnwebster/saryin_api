@@ -82,8 +82,6 @@ module.exports = {
 
     const vendorPaymentCount = await VendorPayment.count({
       where: paymentSearch,
-      offset: limit * (page - 1),
-      limit: limit,
     }).catch((err) => {
       console.log(err);
       return exits.serverError(err);

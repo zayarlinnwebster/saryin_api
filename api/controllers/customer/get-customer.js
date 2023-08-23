@@ -80,8 +80,6 @@ module.exports = {
 
     const customerCount = await Customer.count({
       where: customerSearch,
-      offset: limit * (page - 1),
-      limit: limit,
     }).catch((err) => {
       console.log(err);
       return exits.serverError(err);

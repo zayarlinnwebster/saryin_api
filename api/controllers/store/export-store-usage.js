@@ -1,16 +1,21 @@
 const ExcelJS = require('exceljs');
-const { Op, literal } = require('sequelize');
+const { literal, Op } = require('sequelize');
 
 module.exports = {
 
 
-  friendlyName: 'Export stock item',
+  friendlyName: 'Export store usage',
 
 
   description: '',
 
 
   inputs: {
+
+    id: {
+      type: 'number',
+      required: true,
+    },
 
     search: {
       type: 'string',
@@ -26,21 +31,6 @@ module.exports = {
       type: 'ref',
       required: true,
     },
-
-    column: {
-      type: 'string',
-      defaultsTo: '',
-    },
-
-    direction: {
-      type: 'string',
-      defaultsTo: '',
-    },
-
-    storeId: {
-      type: 'number',
-      allowNull: true,
-    }
 
   },
 
@@ -59,24 +49,9 @@ module.exports = {
 
 
   fn: async function ({
-    search, storeId, fromDate, toDate, column, direction
+    // eslint-disable-next-line no-unused-vars
+    id, search, fromDate, toDate
   }, exits) {
-
-    search = search.trim() || '';
-    let orderTerm = [];
-
-    if (column && direction) {
-      console.log(column.indexOf('storedDate'));
-      if (column.indexOf('item') !== -1) {
-        orderTerm = [[{ model: Item, as: 'item' }, column.substr(column.indexOf('.') + 1), direction.toUpperCase()]];
-      } else if (column.indexOf('customer') !== -1) {
-        orderTerm = [[{ model: Customer, as: 'customer' }, column.substr(column.indexOf('.') + 1), direction.toUpperCase()]];
-      } else if (column.indexOf('store') !== -1 && column.indexOf('storedDate') === -1) {
-        orderTerm = [[{ model: Store, as: 'store' }, column.substr(column.indexOf('.') + 1), direction.toUpperCase()]];
-      } else {
-        orderTerm = [[column, direction.toUpperCase()]];
-      }
-    }
 
     const stockItemList = await StockItem.findAll({
       attributes: [
@@ -90,32 +65,15 @@ module.exports = {
         'customerId',
         'totalPrice',
         [literal('(SELECT SUM(`StockItemOut`.`qty`) FROM `stock_item_out` as `StockItemOut` WHERE `StockItemOut`.`stock_item_id` = `StockItem`.`id`)'), 'totalQtyOut'],
-        [literal('(SELECT SUM(`StockItemOut`.`weight`) FROM `stock_item_out` as `StockItemOut` WHERE `StockItemOut`.`stock_item_id` = `StockItem`.`id`)'), 'totalWeightOut'],
+        [literal('(SELECT SUM(`StockItemOut`.`weight`) FROM `stock_item_out` as `StockItemOut` WHERE `StockItemOut`.`stock_item_id` = `StockItem`.`id`)'), 'totalWeightOut']
       ],
       where: {
-        [Op.and]: [
-          {
-            storedDate: {
-              [Op.between]: [fromDate, toDate]
-            },
-          },
-          storeId && { storeId }
-        ],
-        [Op.or]: [
-          {
-            '$item.item_name$': {
-              [Op.substring]: search,
-            },
-          },
-          {
-            '$customer.full_name$': {
-              [Op.substring]: search,
-            },
-          },
-        ],
+        storedDate: {
+          [Op.between]: [fromDate, toDate]
+        },
+        storeId: id
       },
       subQuery: false,
-      order: orderTerm,
       include: [
         {
           model: Item,
@@ -150,21 +108,21 @@ module.exports = {
     workbook.creator = this.req.user.username;
     workbook.modified = new Date();
 
-    // pageSetup settings for A4 - landscape
-    const stockItemListWorksheet = workbook.addWorksheet(`လှောင်ကုန်စာရင်းများ`, {
+    // Invoice Details Work Sheet Config
+    const customerPaymentsWorksheet = workbook.addWorksheet(`လှောင်ကုန်စာရင်းများ`, {
       pageSetup: { paperSize: 9, orientation: 'landscape' }
     });
 
-    stockItemListWorksheet.columns = [
-      { header: 'ရက်စွဲ (သွင်း)', key: 'storedDate' },
+    customerPaymentsWorksheet.columns = [
+      { header: 'ရက်စွဲ', key: 'storedDate' },
       { header: 'ကုန်သည်အမည်', key: 'fullName' },
-      { header: 'သိုလှောင်ရုံအမည်', key: 'storeName' },
       { header: 'ငါးအမည်', key: 'itemName' },
-      { header: 'အရေအတွက်', key: 'qty' },
-      { header: 'အလေးချိန်', key: 'weight' },
+      { header: 'စျေးနှုန်း', key: 'unitPrice' },
+      { header: 'အလေးချိန်', key: 'qty' },
+      { header: 'စုစုပေါင်းစျေးနှုန်း', key: 'totalPrice' },
     ];
 
-    stockItemListWorksheet.columns.forEach(column => {
+    customerPaymentsWorksheet.columns.forEach(column => {
       column.width = column.header.length < 12 ? 12 : column.header.length;
       column.font = {
         name: 'Arial',
@@ -172,13 +130,13 @@ module.exports = {
       };
     });
 
-    stockItemListWorksheet.getRow(1).font = {
+    customerPaymentsWorksheet.getRow(1).font = {
       name: 'Arial',
       bold: true,
       size: 11
     };
-    stockItemListWorksheet.getRow(1).height = 20;
-    stockItemListWorksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
+    customerPaymentsWorksheet.getRow(1).height = 20;
+    customerPaymentsWorksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
 
     // Invoice Details Work Sheet Config
     const stockItemOutsWorksheet = workbook.addWorksheet(`လှောင်ကုန်ထုတ်စာရင်းများ`, {
@@ -186,14 +144,15 @@ module.exports = {
     });
 
     stockItemOutsWorksheet.columns = [
-      { header: 'ရက်စွဲ (ထုတ်)', key: 'outDate' },
+      { header: 'ရက်စွဲ', key: 'outDate' },
       { header: 'ကုန်သည်အမည်', key: 'fullName' },
-      { header: 'သိုလှောင်ရုံအမည်', key: 'storeName' },
       { header: 'ငါးအမည်', key: 'itemName' },
       { header: 'စျေးနှုန်း', key: 'unitPrice' },
       { header: 'အရေအတွက်', key: 'qty' },
       { header: 'အလေးချိန်', key: 'weight' },
-      { header: 'စုစုပေါင်းစျေးနှုန်း', key: 'totalPrice' },
+      { header: 'ပွဲခ (ရာခိုင်နှုန်း)', key: 'commission' },
+      { header: 'ပွဲခ', key: 'commissionFee' },
+      { header: 'စုစုပေါင်းတန်ဖိုး', key: 'totalPrice' },
     ];
 
     stockItemOutsWorksheet.columns.forEach(column => {
@@ -212,11 +171,11 @@ module.exports = {
     stockItemOutsWorksheet.getRow(1).height = 20;
     stockItemOutsWorksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
 
+
     for (let stockItem of stockItemList) {
-      stockItemListWorksheet.addRow({
+      customerPaymentsWorksheet.addRow({
         storedDate: stockItem.storedDate,
         fullName: stockItem.customer.fullName,
-        storeName: stockItem.store.storeName,
         itemName: stockItem.item.itemName,
         unitPrice: stockItem.unitPrice,
         qty: stockItem.qty,
@@ -224,15 +183,20 @@ module.exports = {
         totalPrice: stockItem.totalPrice,
       });
 
-      for (let outItem of stockItem.outItems) {
-        stockItemOutsWorksheet.addRow({
-          outDate: outItem.outDate,
-          fullName: stockItem.customer.fullName,
-          storeName: stockItem.store.storeName,
-          itemName: stockItem.item.itemName,
-          qty: outItem.qty,
-          weight: outItem.weight,
-        });
+      if (stockItem.outItems.length > 0) {
+        for (let outItem of stockItem.outItems) {
+          stockItemOutsWorksheet.addRow({
+            outDate: outItem.outDate,
+            fullName: stockItem.customer.fullName,
+            itemName: stockItem.item.itemName,
+            qty: outItem.qty,
+            unitPrice: outItem.unitPrice,
+            weight: outItem.weight,
+            commission: outItem.commission,
+            commissionFee: outItem.commissionFee,
+            totalPrice: outItem.totalPrice,
+          });
+        }
       }
     }
 
@@ -245,6 +209,7 @@ module.exports = {
 
     this.res.end();
 
-  },
+  }
+
 
 };

@@ -67,7 +67,8 @@ module.exports = {
     const itemList = await Item.findAll({
       attributes: [
         'itemName',
-        [fn('sum', col('invoiceDetails.qty')), 'totalQty']
+        [fn('sum', col('invoiceDetails.qty')), 'totalQty'],
+        [fn('sum', col('invoiceDetails.weight')), 'totalWeight']
       ],
       where: invoiceDetailSearch,
       include: [
@@ -86,14 +87,24 @@ module.exports = {
         }
       ],
       group: ['Item.id'],
-      order: [['totalQty', 'DESC']]
+      order: [['totalWeight', 'DESC']]
     }).catch((err) => {
       console.log(err);
       return exits.serverError(err);
     });
 
     const labels = itemList.map(item => item.itemName);
-    const data = itemList.map(item => item.dataValues.totalQty);
+    const data = [];
+
+    data.push({
+      name: 'အရေအတွက်',
+      data: itemList.map(item => item.dataValues.totalQty)
+    });
+
+    data.push({
+      name: 'အလေးချိန်',
+      data: itemList.map(item => item.dataValues.totalWeight)
+    });
 
     return exits.success({ labels, data });
 
