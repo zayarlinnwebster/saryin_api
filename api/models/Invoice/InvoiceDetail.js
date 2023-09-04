@@ -5,7 +5,7 @@
  * @docs        :: https://sailsjs.com/docs/concepts/models-and-orm/models
  */
 
-const { INTEGER, DECIMAL } = require('sequelize');
+const { INTEGER, DECIMAL, BOOLEAN, TEXT } = require('sequelize');
 
 module.exports = {
 
@@ -121,6 +121,27 @@ module.exports = {
       }
     },
 
+    remark: {
+      type: TEXT,
+      allowNull: true,
+      validate: {
+        len: {
+          args: [0, 65535],
+          msg: 'remark must be less than 65,535 characters'
+        }
+      },
+    },
+
+    isBillCleared: {
+      type: BOOLEAN,
+      defaultValue: false,
+    },
+
+    isStoreItem: {
+      type: BOOLEAN,
+      defaultValue: false,
+    },
+
   },
 
   associations: function () {
@@ -170,6 +191,13 @@ module.exports = {
         }
       },
       onDelete: 'RESTRICT',
+      onUpdate: 'CASCADE',
+    });
+
+    InvoiceDetail.hasOne(StockItem, {
+      as: 'stockItem',
+      foreignKey: 'invoiceDetailId',
+      onDelete: 'SET NULL',
       onUpdate: 'CASCADE',
     });
 

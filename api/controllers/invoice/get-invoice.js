@@ -118,6 +118,7 @@ module.exports = {
       offset: limit * (page - 1),
       limit: limit,
       order: orderTerm,
+      subQuery: false,
       include: [
         {
           model: Customer,
@@ -125,28 +126,29 @@ module.exports = {
           attributes: ['id', 'fullName', 'commission'],
           required: true,
         },
-        {
-          model: InvoiceDetail,
-          as: 'invoiceDetails',
-          required: true,
-          include: [
-            {
-              model: Item,
-              as: 'item',
-              attributes: ['id', 'itemName'],
-            },
-            {
-              model: Vendor,
-              as: 'vendor',
-              attributes: ['id', 'vendorName'],
-            },
-          ]
-        }
+        // {
+        //   model: InvoiceDetail,
+        //   as: 'invoiceDetails',
+        //   required: true,
+        //   include: [
+        //     {
+        //       model: Item,
+        //       as: 'item',
+        //       attributes: ['id', 'itemName'],
+        //     },
+        //     {
+        //       model: Vendor,
+        //       as: 'vendor',
+        //       attributes: ['id', 'vendorName'],
+        //     },
+        //   ]
+        // }
       ],
-    }).catch((err) => {
-      console.log(err);
-      return exits.serverError(err);
-    });
+    })
+      .catch((err) => {
+        console.log(err);
+        return exits.serverError(err);
+      });
 
     const totalInvoiceAmount = invoiceList.reduce(
       (accumulator, currentValue) => accumulator + Number(currentValue.totalAmount), 0);

@@ -42,7 +42,7 @@ module.exports = {
   exits: {
 
     success: {
-      statusCode: 201,
+      statusCode: 200,
     },
 
     invalidValidation: {
@@ -94,7 +94,19 @@ module.exports = {
 
     for (let invoiceDetail of inputs.invoiceDetails) {
       if (invoiceDetail.id) {
-        await InvoiceDetail.update(invoiceDetail, {
+        await InvoiceDetail.update({
+          qty: invoiceDetail.qty,
+          weight: invoiceDetail.weight,
+          unitPrice: invoiceDetail.unitPrice,
+          totalPrice: invoiceDetail.totalPrice,
+          laborFee: invoiceDetail.laborFee,
+          generalFee: invoiceDetail.generalFee,
+          remark: invoiceDetail.remark,
+          itemId: invoiceDetail.itemId,
+          vendorId: invoiceDetail.vendorId,
+          isBillCleared: invoiceDetail.isBillCleared,
+          isStoreItem: invoiceDetail.isStoreItem,
+        }, {
           where: {
             id: invoiceDetail.id
           },
@@ -104,6 +116,41 @@ module.exports = {
             await transaction.rollback();
             return exits.invalidValidation(err);
           });
+
+        if (invoiceDetail.isStoreItem) {
+          await StockItem.update({
+            storedDate: invoiceDetail.storedDate,
+            qty: invoiceDetail.qty,
+            weight: invoiceDetail.weight,
+            unitPrice: invoiceDetail.unitPrice,
+            itemId: invoiceDetail.itemId,
+            customerId: inputs.customerId,
+            storeId: invoiceDetail.storeId,
+            totalPrice: invoiceDetail.totalPrice
+          }, {
+            where: {
+              invoiceDetailId: invoiceDetail.id
+            },
+            transaction
+          })
+            .catch(async (err) => {
+              await transaction.rollback();
+              return exits.invalidValidation(err);
+            });
+        } else {
+          await StockItem.destroy({
+            where: {
+              invoiceDetailId: invoiceDetail.id
+            },
+            transaction
+          })
+            .catch(async (err) => {
+              await transaction.rollback();
+              return exits.invalidValidation(err);
+            });
+        }
+
+
         updateInvoiceDetailsId.push(invoiceDetail.id);
       } else {
         newInvoiceDetails.push({
@@ -128,10 +175,47 @@ module.exports = {
       });
 
     if (newInvoiceDetails.length > 0) {
-      await InvoiceDetail.bulkCreate(newInvoiceDetails, {
-        transaction
-      })
+      const stockItemList = [];
+
+      for (let invoiceDetail of newInvoiceDetails) {
+        const createdInvoiceDetail = await InvoiceDetail.create({
+          qty: invoiceDetail.qty,
+          weight: invoiceDetail.weight,
+          unitPrice: invoiceDetail.unitPrice,
+          totalPrice: invoiceDetail.totalPrice,
+          laborFee: invoiceDetail.laborFee,
+          generalFee: invoiceDetail.generalFee,
+          remark: invoiceDetail.remark,
+          itemId: invoiceDetail.itemId,
+          vendorId: invoiceDetail.vendorId,
+          isBillCleared: invoiceDetail.isBillCleared,
+          isStoreItem: invoiceDetail.isStoreItem,
+          invoiceId: inputs.id,
+        }, { transaction })
+          .catch(async (err) => {
+            console.log(err);
+            await transaction.rollback();
+            return exits.invalidValidation(err);
+          });
+
+        if (invoiceDetail.isStoreItem) {
+          stockItemList.push({
+            storedDate: invoiceDetail.storedDate,
+            qty: invoiceDetail.qty,
+            weight: invoiceDetail.weight,
+            unitPrice: invoiceDetail.unitPrice,
+            itemId: invoiceDetail.itemId,
+            customerId: inputs.customerId,
+            storeId: invoiceDetail.storeId,
+            invoiceDetailId: createdInvoiceDetail.id,
+            totalPrice: invoiceDetail.totalPrice
+          });
+        }
+      }
+
+      await StockItem.bulkCreate(stockItemList, { transaction })
         .catch(async (err) => {
+          console.log(err);
           await transaction.rollback();
           return exits.invalidValidation(err);
         });

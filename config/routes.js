@@ -193,6 +193,9 @@ module.exports.routes = {
   'GET /api/v1/invoice/': {
     action: 'invoice/get-invoice',
   },
+  'GET /api/v1/invoice/:id': {
+    action: 'invoice/get-invoice-by-id',
+  },
   'GET /api/v1/invoice/export': {
     action: 'invoice/export-invoice',
   },
@@ -213,6 +216,9 @@ module.exports.routes = {
   },
   'GET /api/v1/customer/:id/usage/export': {
     action: 'customer/export-customer-usage'
+  },
+  'PATCH /api/v1/invoice/detail/:id/bill-clear': {
+    action: 'invoice/update-bill-clear'
   },
 
 

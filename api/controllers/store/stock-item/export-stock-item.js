@@ -161,7 +161,9 @@ module.exports = {
       { header: 'သိုလှောင်ရုံအမည်', key: 'storeName' },
       { header: 'ငါးအမည်', key: 'itemName' },
       { header: 'အရေအတွက်', key: 'qty' },
+      { header: 'စျေးနှုန်း', key: 'unitPrice' },
       { header: 'အလေးချိန်', key: 'weight' },
+      { header: 'သင့်ငွေ', key: 'totalPrice' },
     ];
 
     stockItemListWorksheet.columns.forEach(column => {
@@ -193,7 +195,7 @@ module.exports = {
       { header: 'စျေးနှုန်း', key: 'unitPrice' },
       { header: 'အရေအတွက်', key: 'qty' },
       { header: 'အလေးချိန်', key: 'weight' },
-      { header: 'စုစုပေါင်းစျေးနှုန်း', key: 'totalPrice' },
+      { header: 'သင့်ငွေ', key: 'totalPrice' },
     ];
 
     stockItemOutsWorksheet.columns.forEach(column => {

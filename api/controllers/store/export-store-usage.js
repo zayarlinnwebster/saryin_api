@@ -117,9 +117,10 @@ module.exports = {
       { header: 'ရက်စွဲ', key: 'storedDate' },
       { header: 'ကုန်သည်အမည်', key: 'fullName' },
       { header: 'ငါးအမည်', key: 'itemName' },
+      { header: 'အရေအတွက်', key: 'qty' },
       { header: 'စျေးနှုန်း', key: 'unitPrice' },
-      { header: 'အလေးချိန်', key: 'qty' },
-      { header: 'စုစုပေါင်းစျေးနှုန်း', key: 'totalPrice' },
+      { header: 'အလေးချိန်', key: 'weight' },
+      { header: 'သင့်ငွေ', key: 'totalPrice' },
     ];
 
     customerPaymentsWorksheet.columns.forEach(column => {
@@ -152,7 +153,7 @@ module.exports = {
       { header: 'အလေးချိန်', key: 'weight' },
       { header: 'ပွဲခ (ရာခိုင်နှုန်း)', key: 'commission' },
       { header: 'ပွဲခ', key: 'commissionFee' },
-      { header: 'စုစုပေါင်းတန်ဖိုး', key: 'totalPrice' },
+      { header: 'သင့်ငွေ', key: 'totalPrice' },
     ];
 
     stockItemOutsWorksheet.columns.forEach(column => {
@@ -199,6 +200,64 @@ module.exports = {
         }
       }
     }
+
+    const { totalQtyOut,
+      totalQtyIn,
+      totalWeightIn,
+      totalWeightOut,
+      totalPriceIn,
+      totalPriceOut,
+      totalCommissionFee } = await Store.getStoreUsage(id, search, fromDate, toDate)
+        .catch((err) => {
+          console.log(err);
+          return exits.serverError(err);
+        });
+
+    const totalInvoiceSummaryWorksheet = workbook.addWorksheet(`စုစုပေါင်းစာရင်းအနှစ်ချုပ်`, {
+      pageSetup: { paperSize: 9, orientation: 'landscape' }
+    });
+
+    totalInvoiceSummaryWorksheet.columns = [
+      { header: 'အရေအတွက် (သွင်း)', key: 'totalQtyIn' },
+      { header: 'အရေအတွက် (ထုတ်)', key: 'totalQtyOut' },
+      { header: 'အရေအတွက် (ကျန်)', key: 'totalQtyLeft' },
+      { header: 'အလေးချိန် (သွင်း)', key: 'totalWeightIn' },
+      { header: 'အလေးချိန် (ထုတ်)', key: 'totalWeightOut' },
+      { header: 'အလေးချိန် (ကျန်)', key: 'totalWeightLeft' },
+      { header: 'စုစုပေါင်းတန်ဖိုး (သွင်း)', key: 'totalPriceIn' },
+      { header: 'စုစုပေါင်းတန်ဖိုး (ထုတ်)', key: 'totalPriceOut' },
+      { header: 'စုစုပေါင်းပွဲခ', key: 'totalCommissionFee' },
+      { header: 'စုစုပေါင်းအမြတ်', key: 'totalProfitAmount' },
+    ];
+
+    totalInvoiceSummaryWorksheet.columns.forEach(column => {
+      column.width = column.header.length < 12 ? 12 : column.header.length;
+      column.font = {
+        name: 'Arial',
+        size: 11,
+      };
+    });
+
+    totalInvoiceSummaryWorksheet.getRow(1).font = {
+      name: 'Arial',
+      bold: true,
+      size: 11
+    };
+    totalInvoiceSummaryWorksheet.getRow(1).height = 20;
+    totalInvoiceSummaryWorksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+    totalInvoiceSummaryWorksheet.addRow({
+      totalQtyIn: totalQtyIn,
+      totalQtyOut: totalQtyOut,
+      totalQtyLeft: Number(totalQtyIn) - Number(totalQtyOut),
+      totalWeightIn: totalWeightIn,
+      totalWeightOut: totalWeightOut,
+      totalWeightLeft: Number(totalWeightIn) - Number(totalWeightOut),
+      totalPriceIn: totalPriceIn,
+      totalPriceOut: totalPriceOut,
+      totalCommissionFee: totalCommissionFee,
+      totalProfitAmount: (Number(totalPriceOut) - Number(totalPriceIn)) + Number(totalCommissionFee),
+    });
 
     const fileName = `SarYin(${new Date(fromDate).toDateString()} To ${new Date(toDate).toDateString()}).xlsx`;
 

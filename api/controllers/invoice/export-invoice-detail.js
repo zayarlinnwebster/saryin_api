@@ -153,6 +153,15 @@ module.exports = {
     const totalInvoiceDetailAmount = invoiceDetailList.reduce(
       (accumulator, currentValue) => accumulator + Number(currentValue.totalPrice), 0);
 
+    const totalBillClearedInvoiceDetailAmount = invoiceDetailList.reduce(
+      (accumulator, currentValue) => accumulator + (currentValue.isBillCleared ? Number(currentValue.totalPrice) : 0), 0);
+
+    const totalGeneralAmount = invoiceDetailList.reduce(
+      (accumulator, currentValue) => accumulator + Number(currentValue.generalFee), 0);
+
+    const totalLaborAmount = invoiceDetailList.reduce(
+      (accumulator, currentValue) => accumulator + Number(currentValue.laborFee), 0);
+
     const workbook = new ExcelJS.Workbook();
     workbook.creator = this.req.user.username;
     workbook.modified = new Date();
@@ -161,12 +170,6 @@ module.exports = {
     const invoiceDetailsWorksheet = workbook.addWorksheet(`နယ်ပို့စာရင်းအသေးစိတ်`, {
       pageSetup: { paperSize: 9, orientation: 'landscape' }
     });
-
-    const totalGeneralAmount = invoiceDetailList.reduce(
-      (accumulator, currentValue) => accumulator + Number(currentValue.generalFee), 0);
-
-    const totalLaborAmount = invoiceDetailList.reduce(
-      (accumulator, currentValue) => accumulator + Number(currentValue.laborFee), 0);
 
     invoiceDetailsWorksheet.columns = [
       { header: 'ရက်စွဲ', key: 'invoiceDate' },
@@ -222,6 +225,7 @@ module.exports = {
       { header: 'စုစုပေါင်းအလုပ်သမားခ', key: 'totalLaborAmount' },
       { header: 'စုစုပေါင်းအထွေထွေခ', key: 'totalGeneralAmount' },
       { header: 'စုစုပေါင်းတန်ဖိုး', key: 'totalInvoiceDetailAmount' },
+      { header: 'စုစုပေါင်းရှင်းပြီးတန်ဖိုး', key: 'totalBillClearedInvoiceDetailAmount' },
     ];
 
     totalInvoiceSummaryWorksheet.columns.forEach(column => {
@@ -244,6 +248,7 @@ module.exports = {
       totalInvoiceDetailAmount: totalInvoiceDetailAmount,
       totalGeneralAmount: totalGeneralAmount,
       totalLaborAmount: totalLaborAmount,
+      totalBillClearedInvoiceDetailAmount: totalBillClearedInvoiceDetailAmount
     });
 
     const fileName = `SarYin(${new Date(fromDate).toDateString()} To ${new Date(toDate).toDateString()}).xlsx`;

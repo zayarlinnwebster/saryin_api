@@ -199,6 +199,9 @@ module.exports = {
     const totalInvoiceDetailAmount = invoiceDetailList.reduce(
       (accumulator, currentValue) => accumulator + Number(currentValue.totalPrice), 0);
 
+    const totalBillClearedInvoiceDetailAmount = invoiceDetailList.reduce(
+      (accumulator, currentValue) => accumulator + (currentValue.isBillCleared ? Number(currentValue.totalPrice) : 0), 0);
+
     const totalGeneralAmount = invoiceDetailList.reduce(
       (accumulator, currentValue) => accumulator + Number(currentValue.generalFee), 0);
 
@@ -211,7 +214,8 @@ module.exports = {
       totalAmount: {
         totalInvoiceDetailAmount,
         totalGeneralAmount,
-        totalLaborAmount
+        totalLaborAmount,
+        totalBillClearedInvoiceDetailAmount
       }
     });
 

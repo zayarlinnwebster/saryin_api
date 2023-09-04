@@ -156,6 +156,13 @@ module.exports = {
       onUpdate: 'CASCADE',
     });
 
+    StockItem.belongsTo(InvoiceDetail, {
+      as: 'invoiceDetail',
+      foreignKey: 'invoiceDetailId',
+      onDelete: 'SET NULL',
+      onUpdate: 'CASCADE',
+    });
+
   },
 
   options: {

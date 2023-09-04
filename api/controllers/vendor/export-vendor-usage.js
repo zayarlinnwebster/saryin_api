@@ -135,6 +135,11 @@ module.exports = {
     const totalInvoiceDetailAmount = invoiceDetailList.reduce(
       (accumulator, currentValue) => accumulator + Number(currentValue.totalPrice), 0);
 
+    const totalBillClearedVendorInvoice = invoiceDetailList.reduce(
+      (accumulator, currentValue) => accumulator + (currentValue.isBillCleared ? Number(currentValue.totalPrice) : 0), 0);
+
+    console.log(totalBillClearedVendorInvoice);
+
     const totalGeneralAmount = invoiceDetailList.reduce(
       (accumulator, currentValue) => accumulator + Number(currentValue.generalFee), 0);
 
@@ -247,6 +252,7 @@ module.exports = {
       { header: 'စုစုပေါင်းတန်ဖိုး ', key: 'totalInvoiceDetailAmount' },
       { header: 'စုစုပေါင်းသွင်းငွေတန်ဖိုး', key: 'totalPaidAmount' },
       { header: 'စုစုပေါင်းကျန်ငွေ', key: 'totalLeftAmount' },
+      { header: 'စုစုပေါင်းရှင်းပြီးတန်ဖိုး ', key: 'totalBillClearedVendorInvoice' },
     ];
 
     totalInvoiceSummaryWorksheet.columns.forEach(column => {
@@ -270,6 +276,7 @@ module.exports = {
       totalLaborAmount: totalLaborAmount,
       totalGeneralAmount: totalGeneralAmount,
       totalInvoiceDetailAmount: totalInvoiceDetailAmount,
+      totalBillClearedVendorInvoice: totalBillClearedVendorInvoice,
       totalLeftAmount: Number(totalInvoiceDetailAmount) - Number(totalPaidAmount),
     });
 
