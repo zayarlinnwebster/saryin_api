@@ -51,6 +51,7 @@ module.exports = {
   fn: async function ({
     id, search, fromDate, toDate
   }, exits) {
+    search = search.trim() || '';
 
     const customerPaymentList = await CustomerPayment.findAll({
       attributes: [
@@ -98,6 +99,13 @@ module.exports = {
           {
             '$invoice.customer_id$': id
           }
+        ],
+        [Op.or]: [
+          {
+            '$vendor.vendor_name$': {
+              [Op.substring]: search,
+            },
+          },
         ],
       },
       subQuery: false,

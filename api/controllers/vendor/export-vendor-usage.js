@@ -49,8 +49,9 @@ module.exports = {
 
 
   fn: async function ({
-    id, fromDate, toDate
+    id, search, fromDate, toDate
   }, exits) {
+    search = search.trim() || '';
 
     const vendorPaymentList = await VendorPayment.findAll({
       attributes: [
@@ -98,6 +99,13 @@ module.exports = {
             vendorId: id
           }
         ],
+        [Op.or]: [
+          {
+            '$invoice.customer.full_name$': {
+              [Op.substring]: search,
+            },
+          },
+        ],
       },
       subQuery: false,
       include: [
@@ -137,8 +145,6 @@ module.exports = {
 
     const totalBillClearedVendorInvoice = invoiceDetailList.reduce(
       (accumulator, currentValue) => accumulator + (currentValue.isBillCleared ? Number(currentValue.totalPrice) : 0), 0);
-
-    console.log(totalBillClearedVendorInvoice);
 
     const totalGeneralAmount = invoiceDetailList.reduce(
       (accumulator, currentValue) => accumulator + Number(currentValue.generalFee), 0);

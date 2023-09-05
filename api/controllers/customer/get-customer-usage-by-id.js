@@ -74,10 +74,16 @@ module.exports = {
             },
           },
         ],
-        '$invoice.invoice_date$': {
-          [Op.between]: [fromDate, toDate]
-        },
-        '$invoice.customer_id$': id,
+        [Op.and]: [
+          {
+            '$invoice.invoice_date$': {
+              [Op.between]: [fromDate, toDate]
+            },
+          },
+          {
+            '$invoice.customer_id$': id
+          }
+        ],
       },
       include: [
         {
