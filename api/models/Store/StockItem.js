@@ -48,8 +48,8 @@ module.exports = {
           msg: 'qty must be required'
         },
         min: {
-          args: [1],
-          msg: 'qty must be greater than or equal to 1',
+          args: [0],
+          msg: 'qty must be greater than or equal to 0',
         },
       }
     },
