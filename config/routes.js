@@ -220,6 +220,9 @@ module.exports.routes = {
   'PATCH /api/v1/invoice/detail/:id/bill-clear': {
     action: 'invoice/update-bill-clear'
   },
+  'PUT /api/v1/invoice/:id/separate': {
+    action: 'invoice/separate-invoice'
+  },
 
 
   //Customer Payment Routes

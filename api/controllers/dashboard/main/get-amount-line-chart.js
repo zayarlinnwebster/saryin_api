@@ -65,7 +65,13 @@ module.exports = {
       data: invoiceList.map(invoice => Number(invoice.dataValues.invoiceTotalAmount))
     });
 
-    const labels = invoiceList.map(invoice => moment(invoice.invoiceDate).format('DD MMM'));
+    let labels = [];
+
+    for (let invoice of invoiceList) {
+      if (labels.indexOf(moment(invoice.invoiceDate).format('DD MMM'))) {
+
+      }
+    }
 
     return exits.success({ labels, data });
 

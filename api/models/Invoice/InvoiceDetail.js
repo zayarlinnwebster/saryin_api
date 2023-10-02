@@ -197,7 +197,7 @@ module.exports = {
     InvoiceDetail.hasOne(StockItem, {
       as: 'stockItem',
       foreignKey: 'invoiceDetailId',
-      onDelete: 'SET NULL',
+      onDelete: 'CASCADE',
       onUpdate: 'CASCADE',
     });
 
