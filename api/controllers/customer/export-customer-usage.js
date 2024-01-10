@@ -151,6 +151,47 @@ module.exports = {
     const totalLaborAmount = invoiceDetailList.reduce(
       (accumulator, currentValue) => accumulator + Number(currentValue.laborFee), 0);
 
+    const totalItemCount = await InvoiceDetail.count({
+      col: 'item_id',
+      distinct: true,
+      where: {
+        [Op.or]: [
+          {
+            '$vendor.vendor_name$': {
+              [Op.substring]: search,
+            },
+          },
+        ],
+        [Op.and]: [
+          {
+            '$invoice.invoice_date$': {
+              [Op.between]: [fromDate, toDate]
+            },
+          },
+          {
+            '$invoice.customer_id$': id
+          }
+        ],
+      },
+      include: [
+        {
+          model: Invoice,
+          as: 'invoice',
+          attributes: [],
+          required: true,
+        },
+        {
+          model: Vendor,
+          as: 'vendor',
+          attributes: [],
+          required: true,
+        }
+      ]
+    }).catch((err) => {
+      console.log(err);
+      return exits.serverError(err);
+    });
+
     const workbook = new ExcelJS.Workbook();
     workbook.creator = this.req.user.username;
     workbook.modified = new Date();
@@ -258,6 +299,7 @@ module.exports = {
       { header: 'ကော်မရှင်ခ', key: 'totalCommissionAmount' },
       { header: 'စုစုပေါင်းလွှဲငွေတန်ဖိုး', key: 'totalPaidAmount' },
       { header: 'စုစုပေါင်းကျန်ငွေ', key: 'totalLeftAmount' },
+      { header: 'ငါးအမယ်ပေါင်း', key: 'totalItemCount' },
     ];
 
     totalInvoiceSummaryWorksheet.columns.forEach(column => {
@@ -287,6 +329,7 @@ module.exports = {
       commission: customerCommission + ' %',
       totalCommissionAmount: Math.round(totalCommissionAmount),
       totalLeftAmount: Math.round(Number(totalInvoiceDetailAmount) - Number(totalPaidAmount) + Number(totalCommissionAmount)),
+      totalItemCount: totalItemCount,
     });
 
     const fileName = `SarYin(${new Date(fromDate).toDateString()} To ${new Date(toDate).toDateString()}).xlsx`;

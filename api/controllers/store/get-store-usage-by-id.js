@@ -1,3 +1,5 @@
+const { Op } = require('sequelize');
+
 module.exports = {
 
 
@@ -57,7 +59,9 @@ module.exports = {
       totalWeightOut,
       totalPriceIn,
       totalPriceOut,
-      totalCommissionFee } = await Store.getStoreUsage(id, search, fromDate, toDate)
+      totalCommissionFee,
+      totalItemCount,
+    } = await Store.getStoreUsage(id, search, fromDate, toDate)
         .catch((err) => {
           console.log(err);
           return exits.serverError(err);
@@ -70,7 +74,8 @@ module.exports = {
       totalWeightOut,
       totalPriceIn,
       totalPriceOut,
-      totalCommissionFee
+      totalCommissionFee,
+      totalItemCount
     });
 
 

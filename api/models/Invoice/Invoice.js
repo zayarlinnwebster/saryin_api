@@ -67,7 +67,7 @@ module.exports = {
           },
         }
       },
-      onDelete: 'CASCADE',
+      onDelete: 'RESTRICT',
       onUpdate: 'CASCADE',
     });
 

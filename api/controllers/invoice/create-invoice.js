@@ -90,6 +90,7 @@ module.exports = {
             storedDate: invoiceDetail.storedDate,
             qty: invoiceDetail.qty,
             weight: invoiceDetail.weight,
+            marLaKar: invoiceDetail.marLaKar,
             unitPrice: invoiceDetail.unitPrice,
             itemId: invoiceDetail.itemId,
             customerId: inputs.customerId,

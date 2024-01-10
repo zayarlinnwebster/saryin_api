@@ -5,7 +5,7 @@
  * @docs        :: https://sailsjs.com/docs/concepts/models-and-orm/models
  */
 
-const { DATEONLY, NOW, INTEGER, DECIMAL } = require('sequelize');
+const { DATEONLY, NOW, INTEGER, DECIMAL, TEXT } = require('sequelize');
 
 module.exports = {
 
@@ -86,6 +86,17 @@ module.exports = {
           msg: 'totalPrice must be greater than or equal to 0',
         },
       }
+    },
+
+    marLaKar: {
+      type: TEXT,
+      allowNull: true,
+      validate: {
+        len: {
+          args: [0, 65535],
+          msg: 'marLaKar must be less than 65,535 characters'
+        }
+      },
     },
 
   },

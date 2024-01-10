@@ -29,6 +29,11 @@ module.exports = {
       required: true,
     },
 
+    marLaKar: {
+      type: 'string',
+      required: true,
+    },
+
     itemId: {
       type: 'number',
       required: true,

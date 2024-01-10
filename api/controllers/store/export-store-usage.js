@@ -1,3 +1,4 @@
+const contentDisposition = require('content-disposition');
 const ExcelJS = require('exceljs');
 const { literal, Op } = require('sequelize');
 
@@ -60,6 +61,7 @@ module.exports = {
         'unitPrice',
         'qty',
         'weight',
+        'marLaKar',
         'itemId',
         'storeId',
         'customerId',
@@ -109,21 +111,22 @@ module.exports = {
     workbook.modified = new Date();
 
     // Invoice Details Work Sheet Config
-    const customerPaymentsWorksheet = workbook.addWorksheet(`လှောင်ကုန်စာရင်းများ`, {
+    const stockItemsWorksheet = workbook.addWorksheet(`လှောင်ကုန်စာရင်းများ`, {
       pageSetup: { paperSize: 9, orientation: 'landscape' }
     });
 
-    customerPaymentsWorksheet.columns = [
+    stockItemsWorksheet.columns = [
       { header: 'ရက်စွဲ', key: 'storedDate' },
       { header: 'ကုန်သည်အမည်', key: 'fullName' },
       { header: 'ငါးအမည်', key: 'itemName' },
+      { header: 'မာလကာ', key: 'marLaKar' },
       { header: 'အရေအတွက်', key: 'qty' },
       { header: 'စျေးနှုန်း', key: 'unitPrice' },
       { header: 'အလေးချိန်', key: 'weight' },
       { header: 'သင့်ငွေ', key: 'totalPrice' },
     ];
 
-    customerPaymentsWorksheet.columns.forEach(column => {
+    stockItemsWorksheet.columns.forEach(column => {
       column.width = column.header.length < 12 ? 12 : column.header.length;
       column.font = {
         name: 'Arial',
@@ -131,13 +134,13 @@ module.exports = {
       };
     });
 
-    customerPaymentsWorksheet.getRow(1).font = {
+    stockItemsWorksheet.getRow(1).font = {
       name: 'Arial',
       bold: true,
       size: 11
     };
-    customerPaymentsWorksheet.getRow(1).height = 20;
-    customerPaymentsWorksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
+    stockItemsWorksheet.getRow(1).height = 20;
+    stockItemsWorksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
 
     // Invoice Details Work Sheet Config
     const stockItemOutsWorksheet = workbook.addWorksheet(`လှောင်ကုန်ထုတ်စာရင်းများ`, {
@@ -174,10 +177,11 @@ module.exports = {
 
 
     for (let stockItem of stockItemList) {
-      customerPaymentsWorksheet.addRow({
+      stockItemsWorksheet.addRow({
         storedDate: stockItem.storedDate,
         fullName: stockItem.customer.fullName,
         itemName: stockItem.item.itemName,
+        marLaKar: stockItem.marLaKar,
         unitPrice: stockItem.unitPrice,
         qty: stockItem.qty,
         weight: stockItem.weight,
@@ -207,7 +211,9 @@ module.exports = {
       totalWeightOut,
       totalPriceIn,
       totalPriceOut,
-      totalCommissionFee } = await Store.getStoreUsage(id, search, fromDate, toDate)
+      totalCommissionFee,
+      totalItemCount
+    } = await Store.getStoreUsage(id, search, fromDate, toDate)
         .catch((err) => {
           console.log(err);
           return exits.serverError(err);
@@ -228,6 +234,7 @@ module.exports = {
       { header: 'စုစုပေါင်းတန်ဖိုး (ထုတ်)', key: 'totalPriceOut' },
       { header: 'စုစုပေါင်းပွဲခ', key: 'totalCommissionFee' },
       { header: 'စုစုပေါင်းအမြတ်', key: 'totalProfitAmount' },
+      { header: 'ငါးအမယ်ပေါင်း', key: 'totalItemCount' },
     ];
 
     totalInvoiceSummaryWorksheet.columns.forEach(column => {
@@ -257,12 +264,13 @@ module.exports = {
       totalPriceOut: totalPriceOut,
       totalCommissionFee: totalCommissionFee,
       totalProfitAmount: (Number(totalPriceOut) - Number(totalPriceIn)) + Number(totalCommissionFee),
+      totalItemCount: totalItemCount,
     });
 
     const fileName = `SarYin(${new Date(fromDate).toDateString()} To ${new Date(toDate).toDateString()}).xlsx`;
 
     this.res.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    this.res.set('Content-Disposition', 'attachment; filename=' + fileName);
+    this.res.set('Content-Disposition', contentDisposition(fileName));
 
     await workbook.xlsx.write(this.res);
 

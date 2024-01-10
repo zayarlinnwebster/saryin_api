@@ -63,10 +63,9 @@ module.exports = {
     const stockItemList = await StockItem.findAll({
       attributes: [
         'itemId',
-        [fn('SUM', col('qty')), 'totalQty'],
-        [fn('SUM', col('weight')), 'totalWeight'],
+        'qty',
+        'weight'
       ],
-      subQuery: false,
       where: {
         storeId: id,
         [Op.or]: {
@@ -75,11 +74,10 @@ module.exports = {
           }
         }
       },
-      group: ['itemId'],
       include: {
         model: Item,
         as: 'item',
-        attributes: ['id', 'itemName'],
+        attributes: ['itemName'],
       },
       order: orderTerm,
     }).catch((err) => {
@@ -90,10 +88,9 @@ module.exports = {
     const stockItemOutList = await StockItemOut.findAll({
       attributes: [
         'stockItemId',
-        [fn('SUM', col('StockItemOut.qty')), 'totalOutQty'],
-        [fn('SUM', col('StockItemOut.weight')), 'totalOutWeight'],
+        'qty',
+        'weight'
       ],
-      subQuery: false,
       include: [
         {
           model: StockItem,
@@ -103,56 +100,68 @@ module.exports = {
           where: {
             storeId: id,
           },
+          include: {
+            model: Item,
+            as: 'item',
+            attributes: ['itemName'],
+          },
         },
       ],
-      group: ['stockItemId'],
     }).catch((err) => {
       console.log(err);
       return exits.serverError(err);
     });
 
-    // Create a map for quick access to the total out quantity for each stock item
-    const stockItemOutMap = new Map();
-    for (const stockItemOut of stockItemOutList) {
-      if (stockItemOutMap.has(stockItemOut.stockItem.itemId)) {
-        stockItemOutMap.set(
-          stockItemOut.stockItem.itemId,
-          Number(stockItemOutMap.get(stockItemOut.stockItem.itemId)) + Number(stockItemOut.dataValues.totalOutQty),
-          Number(stockItemOutMap.get(stockItemOut.stockItem.itemId)) + Number(stockItemOut.dataValues.totalOutWeight)
-        );
+    const stockItemMap = new Map();
+
+    for (let inStock of stockItemList) {
+      if (stockItemMap.has(inStock.itemId)) {
+        const preStockItem = stockItemMap.get(inStock.itemId);
+
+        stockItemMap.set(inStock.itemId, {
+          ...preStockItem,
+          totalQty: preStockItem.totalQty + parseInt(inStock.qty),
+          totalWeight: preStockItem.totalWeight + parseFloat(inStock.weight),
+          leftQty: preStockItem.leftQty + parseInt(inStock.qty),
+          leftWeight: preStockItem.leftWeight + parseFloat(inStock.weight)
+        });
       } else {
-        stockItemOutMap.set(
-          stockItemOut.stockItem.itemId,
-          stockItemOut.dataValues.totalOutQty,
-          stockItemOut.dataValues.totalOutWeight
-        );
+        stockItemMap.set(inStock.itemId, {
+          id: inStock.itemId,
+          itemName: inStock.item.itemName,
+          totalQty: parseInt(inStock.qty),
+          totalWeight: parseFloat(inStock.weight),
+          totalOutQty: 0,
+          totalOutWeight: 0,
+          leftQty: parseInt(inStock.qty),
+          leftWeight: parseFloat(inStock.weight)
+        });
       }
     }
 
-    // Calculate the left quantity for each unique item
-    const stockItemListWithLeftQty = stockItemList.map((stockItem) => {
-      let leftQty = stockItem.dataValues.totalQty - (stockItemOutMap.get(stockItem.itemId) || 0);
+    for (let outStock of stockItemOutList) {
+      if (stockItemMap.has(outStock.stockItem.itemId)) {
+        const preStockItem = stockItemMap.get(outStock.stockItem.itemId);
 
-      let leftWeight = stockItem.dataValues.totalWeight - (stockItemOutMap.get(stockItem.itemId) || 0);
+        const leftQty = preStockItem.leftQty - parseInt(outStock.qty);
+        const leftWeight = preStockItem.leftWeight - parseFloat(outStock.weight);
 
-      if (leftQty === 0 && leftWeight === 0) {
-        return;
+        if (leftQty === 0 && leftWeight === 0) {
+          stockItemMap.delete(outStock.stockItem.itemId);
+        } else {
+          stockItemMap.set(outStock.stockItem.itemId, {
+            ...preStockItem,
+            totalOutQty: preStockItem.totalOutQty + parseInt(outStock.qty),
+            totalOutWeight: preStockItem.totalOutWeight + parseFloat(outStock.weight),
+            leftQty: leftQty,
+            leftWeight: leftWeight
+          });
+        }
       }
-
-      return ({
-        id: stockItem.item.id,
-        itemName: stockItem.item.itemName,
-        totalQty: stockItem.dataValues.totalQty,
-        totalWeight: stockItem.dataValues.totalWeight,
-        totalOutQty: stockItemOutMap.get(stockItem.itemId) || 0,
-        totalOutWeight: stockItemOutMap.get(stockItem.itemId) || 0,
-        leftQty: leftQty,
-        leftWeight: leftWeight
-      });
-    });
+    }
 
     return exits.success({
-      data: stockItemListWithLeftQty,
+      data: [...stockItemMap.values()],
     });
 
   },

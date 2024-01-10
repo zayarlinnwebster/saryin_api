@@ -40,16 +40,49 @@ module.exports = {
 
   fn: async function (inputs, exits) {
 
+    const transaction = await SequelizeConnections['mysqlServer'].transaction();
+
+    const stockItemRecord = await StockItem.findOne({
+      where: {
+        id: inputs.id
+      },
+      transaction
+    })
+    .catch(async (err) => {
+      await transaction.rollback();
+      return exits.invalidValidation(err);
+    });
+
     const isDestroy = await StockItem.destroy({
       where: {
         id: inputs.id,
-      }
+      },
+      transaction
     })
-      .catch((err) => {
+      .catch(async (err) => {
+        await transaction.rollback();
         return exits.invalidValidation(err);
       });
 
     if (isDestroy) {
+      if (stockItemRecord.invoiceDetailId) {
+        await InvoiceDetail.update({
+          isStoreItem: false,
+        },
+        {
+          where: {
+            id: stockItemRecord.invoiceDetailId,
+          },
+          transaction
+        })
+        .catch(async (err) => {
+          await transaction.rollback();
+          return exits.invalidValidation(err);
+        });
+      }
+
+      await transaction.commit();
+
       return exits.success({
         message: 'StockItem deleted successfully'
       });

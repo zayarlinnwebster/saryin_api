@@ -387,6 +387,77 @@ module.exports = {
           throw new Error(err);
         });
 
+        const stockInList = await StockItem.findAll({
+          attributes: ['id', 'itemId', 'qty', 'weight'],
+          where: {
+            [Op.or]: [
+              {
+                '$customer.full_name$': {
+                  [Op.substring]: search,
+                },
+              },
+              {
+                '$item.item_name$': {
+                  [Op.substring]: search,
+                },
+              },
+            ],
+            storedDate: {
+              [Op.between]: [fromDate, toDate]
+            },
+            storeId: id,
+          },
+          include: [
+            {
+              model: Item,
+              as: 'item',
+              attributes: ['itemName'],
+              required: true,
+            },
+            {
+              model: Customer,
+              as: 'customer',
+              attributes: [],
+              required: true,
+            },
+            {
+              model: StockItemOut,
+              as: 'outItems',
+              atrributes: ['qty', 'weight'],
+              required: false,
+              where: {
+                outDate: {
+                  [Op.between]: [fromDate, toDate]
+                },
+              },
+            }
+          ]
+        })
+        .catch((err) => {
+          console.log(err);
+          return exits.serverError(err);
+        });
+
+        let countedItems = new Set();
+        let totalItemCount = 0;
+
+        for (let stockIn of stockInList) {
+          stockIn = stockIn.dataValues;
+
+          if (stockIn.outItems.length > 0) {
+            for (let stockItemOut of stockIn.outItems) {
+              stockItemOut = stockItemOut.dataValues;
+              stockIn.qty = parseInt(stockIn.qty) - parseInt(stockItemOut.qty);
+              stockIn.weight = parseFloat(stockIn.weight) - parseFloat(stockItemOut.weight);
+            }
+          }
+
+          if ((stockIn.qty !== 0 || stockIn.weight !== 0) && !countedItems.has(stockIn.itemId)) {
+            ++totalItemCount;
+            countedItems.add(stockIn.itemId);
+          }
+        }
+
         return {
           totalQtyOut,
           totalQtyIn,
@@ -394,7 +465,8 @@ module.exports = {
           totalWeightOut,
           totalPriceIn,
           totalPriceOut,
-          totalCommissionFee
+          totalCommissionFee,
+          totalItemCount,
         };
       }
     },

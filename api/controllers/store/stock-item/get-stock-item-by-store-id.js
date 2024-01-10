@@ -111,8 +111,6 @@ module.exports = {
       }
     }
 
-    console.log(orderTerm);
-
     const stockItemCount = await StockItem.count({
       where: stockItemSearch,
       include: [
@@ -147,6 +145,7 @@ module.exports = {
         'unitPrice',
         'qty',
         'weight',
+        'marLaKar',
         'itemId',
         'storeId',
         'customerId',

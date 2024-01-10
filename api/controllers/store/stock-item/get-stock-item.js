@@ -96,6 +96,11 @@ module.exports = {
             [Op.substring]: search,
           },
         },
+        {
+          marLaKar: {
+            [Op.substring]: search
+          }
+        }
       ],
     };
 
@@ -148,6 +153,7 @@ module.exports = {
         'unitPrice',
         'qty',
         'weight',
+        'marLaKar',
         'itemId',
         'storeId',
         'customerId',

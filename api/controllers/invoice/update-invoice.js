@@ -117,12 +117,24 @@ module.exports = {
             return exits.invalidValidation(err);
           });
 
-        if (invoiceDetail.isStoreItem) {
+        const existStockItem = await StockItem.count({
+          where: {
+            invoiceDetailId: invoiceDetail.id
+          },
+          transaction
+        })
+          .catch(async (err) => {
+            await transaction.rollback();
+            return exits.invalidValidation(err);
+          });
+
+        if (invoiceDetail.isStoreItem && existStockItem > 0) {
           await StockItem.update({
             storedDate: invoiceDetail.storedDate,
             qty: invoiceDetail.qty,
             weight: invoiceDetail.weight,
             unitPrice: invoiceDetail.unitPrice,
+            marLaKar: invoiceDetail.marLaKar,
             itemId: invoiceDetail.itemId,
             customerId: inputs.customerId,
             storeId: invoiceDetail.storeId,
@@ -137,6 +149,24 @@ module.exports = {
               await transaction.rollback();
               return exits.invalidValidation(err);
             });
+        } else if (invoiceDetail.isStoreItem && existStockItem === 0) {
+          await StockItem.create({
+            storedDate: invoiceDetail.storedDate,
+            qty: invoiceDetail.qty,
+            weight: invoiceDetail.weight,
+            unitPrice: invoiceDetail.unitPrice,
+            marLaKar: invoiceDetail.marLaKar,
+            itemId: invoiceDetail.itemId,
+            customerId: inputs.customerId,
+            storeId: invoiceDetail.storeId,
+            invoiceDetailId: invoiceDetail.id,
+            totalPrice: invoiceDetail.totalPrice
+          },
+          { transaction })
+          .catch(async (err) => {
+            await transaction.rollback();
+            return exits.invalidValidation(err);
+          });
         } else {
           await StockItem.destroy({
             where: {

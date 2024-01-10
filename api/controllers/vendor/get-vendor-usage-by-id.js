@@ -134,10 +134,44 @@ module.exports = {
       return exits.serverError(err);
     });
 
+    const totalItemCount = await InvoiceDetail.count({
+      col: 'item_id',
+      distinct: true,
+      where: {
+        [Op.or]: [
+          {
+            '$invoice.customer.full_name$': {
+              [Op.substring]: search,
+            },
+          },
+        ],
+        '$invoice.invoice_date$': {
+          [Op.between]: [fromDate, toDate]
+        },
+        vendorId: id,
+      },
+      include: {
+        model: Invoice,
+        as: 'invoice',
+        attributes: [],
+        required: true,
+        include: {
+          model: Customer,
+          as: 'customer',
+          attributes: [],
+          required: true,
+        }
+      },
+    }).catch((err) => {
+      console.log(err);
+      return exits.serverError(err);
+    });
+
     return exits.success({
       totalVendorInvoice,
       totalBillClearedVendorInvoice,
       totalVendorPayment,
+      totalItemCount,
     });
 
 

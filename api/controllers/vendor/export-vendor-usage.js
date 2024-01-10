@@ -152,6 +152,39 @@ module.exports = {
     const totalLaborAmount = invoiceDetailList.reduce(
       (accumulator, currentValue) => accumulator + Number(currentValue.laborFee), 0);
 
+    const totalItemCount = await InvoiceDetail.count({
+      col: 'item_id',
+      distinct: true,
+      where: {
+        [Op.or]: [
+          {
+            '$invoice.customer.full_name$': {
+              [Op.substring]: search,
+            },
+          },
+        ],
+        '$invoice.invoice_date$': {
+          [Op.between]: [fromDate, toDate]
+        },
+        vendorId: id,
+      },
+      include: {
+        model: Invoice,
+        as: 'invoice',
+        attributes: [],
+        required: true,
+        include: {
+          model: Customer,
+          as: 'customer',
+          attributes: [],
+          required: true,
+        }
+      },
+    }).catch((err) => {
+      console.log(err);
+      return exits.serverError(err);
+    });
+
     const workbook = new ExcelJS.Workbook();
     workbook.creator = this.req.user.username;
     workbook.modified = new Date();
@@ -259,6 +292,7 @@ module.exports = {
       { header: 'စုစုပေါင်းသွင်းငွေတန်ဖိုး', key: 'totalPaidAmount' },
       { header: 'စုစုပေါင်းကျန်ငွေ', key: 'totalLeftAmount' },
       { header: 'စုစုပေါင်းရှင်းပြီးတန်ဖိုး ', key: 'totalBillClearedVendorInvoice' },
+      { header: 'ငါးအမယ်ပေါင်း ', key: 'totalItemCount' },
     ];
 
     totalInvoiceSummaryWorksheet.columns.forEach(column => {
