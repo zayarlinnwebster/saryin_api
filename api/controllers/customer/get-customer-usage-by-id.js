@@ -82,6 +82,9 @@ module.exports = {
           },
           {
             '$invoice.customer_id$': id
+          },
+          {
+            isStoreItem: false,
           }
         ],
       },
@@ -98,6 +101,45 @@ module.exports = {
           attributes: [],
           required: true,
         }
+      ]
+    }).catch((err) => {
+      console.log(err);
+      return exits.serverError(err);
+    });
+
+    const totalStockInvoice = await StockItem.sum('StockItem.total_price', {
+      where: {
+        [Op.or]: [
+          {
+            '$invoiceDetail.vendor.vendor_name$': {
+              [Op.substring]: search,
+            },
+          },
+        ],
+        [Op.and]: [
+          {
+            storedDate: {
+              [Op.between]: [fromDate, toDate]
+            },
+          },
+          {
+            customerId: id
+          }
+        ],
+      },
+      include: [
+        {
+          model: InvoiceDetail,
+          as: 'invoiceDetail',
+          attributes: [],
+          required: true,
+          include: {
+            model: Vendor,
+            as: 'vendor',
+            attributes: [],
+            required: true,
+          }
+        },
       ]
     }).catch((err) => {
       console.log(err);
@@ -147,6 +189,7 @@ module.exports = {
 
     return exits.success({
       totalCustomerInvoice,
+      totalStockInvoice,
       totalCustomerPayment,
       totalItemCount
     });
