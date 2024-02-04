@@ -158,7 +158,7 @@ module.exports = {
           },
         }
       },
-      onDelete: 'RESTRICT',
+      onDelete: 'CASCADE',
       onUpdate: 'CASCADE',
     });
 
