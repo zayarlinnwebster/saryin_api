@@ -5,7 +5,7 @@
  * @docs        :: https://sailsjs.com/docs/concepts/models-and-orm/models
  */
 
-const { STRING, ENUM, DECIMAL, NOW, DATEONLY } = require('sequelize');
+const { STRING, ENUM, DECIMAL, NOW, DATEONLY, BOOLEAN } = require('sequelize');
 
 module.exports = {
 
@@ -89,6 +89,11 @@ module.exports = {
       }
     },
 
+    isArchived: {
+      type: BOOLEAN,
+      defaultValue: false,
+    },
+
   },
 
   associations: function () {
@@ -108,6 +113,11 @@ module.exports = {
       onDelete: 'RESTRICT',
       onUpdate: 'CASCADE',
     });
+
+    // CustomerPayment.belongsToMany(ArchivedInvoice, {
+    //   through: ArchivedInvoicePaymentList,
+    //   foreignKey: 'customerPaymentId',
+    // });
 
   },
 

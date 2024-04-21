@@ -211,6 +211,9 @@ module.exports.routes = {
   'DELETE /api/v1/invoice/:id': {
     action: 'invoice/delete-invoice',
   },
+  'PUT /api/v1/invoice/detail/:id': {
+    action: 'invoice/update-invoice-detail',
+  },
   'GET /api/v1/customer/:id/usage': {
     action: 'customer/get-customer-usage-by-id'
   },

@@ -101,6 +101,23 @@ module.exports = {
       onUpdate: 'CASCADE',
     });
 
+    // Customer.hasMany(ArchivedInvoice, {
+    //   as: 'archivedInvoices',
+    //   foreignKey: {
+    //     name: 'customerId',
+    //     allowNull: false,
+    //     validate: {
+    //       notNull: {
+    //         args: true,
+    //         msg: 'customerId must be required'
+    //       },
+    //     }
+    //   },
+    //   onDelete: 'RESTRICT',
+    //   onUpdate: 'CASCADE',
+    // });
+
+
     Customer.hasMany(CustomerPayment, {
       as: 'payments',
       foreignKey: {

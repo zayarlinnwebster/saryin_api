@@ -143,7 +143,7 @@ module.exports = {
           as: 'item',
           attributes: ['id', 'itemName'],
           required: true,
-        }
+        },
       ]
     }).catch((err) => {
       console.log(err);
@@ -180,6 +180,11 @@ module.exports = {
           as: 'item',
           attributes: ['id', 'itemName'],
           required: true,
+        },
+        {
+          model: StockItem,
+          as: 'stockItem',
+          attributes: ['storedDate', 'storeId', 'marLaKar']
         }
       ]
     }).catch((err) => {

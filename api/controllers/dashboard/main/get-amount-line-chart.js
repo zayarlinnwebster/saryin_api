@@ -46,7 +46,7 @@ module.exports = {
     const invoiceList = await Invoice.findAll({
       attributes: [
         'invoiceDate',
-        [fn('sum', col('total_amount')), 'invoiceTotalAmount'],
+        'totalAmount',
       ],
       where: {
         invoiceDate: {
@@ -60,18 +60,18 @@ module.exports = {
         return exits.serverError(err);
       });
 
+    const groupedData = invoiceList.reduce((acc, invoice) => {
+      const { invoiceDate, totalAmount } = invoice;
+      acc[invoiceDate] = (acc[invoiceDate] || 0) + Number(totalAmount);
+      return acc;
+    }, {});
+
     data.push({
       name: 'နယ်ပို့စာရင်း',
-      data: invoiceList.map(invoice => Number(invoice.dataValues.invoiceTotalAmount))
+      data: Object.values(groupedData)
     });
 
-    let labels = [];
-
-    for (let invoice of invoiceList) {
-      if (labels.indexOf(moment(invoice.invoiceDate).format('DD MMM'))) {
-
-      }
-    }
+    let labels = Object.keys(groupedData);
 
     return exits.success({ labels, data });
 

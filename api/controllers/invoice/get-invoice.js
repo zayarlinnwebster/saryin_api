@@ -72,19 +72,12 @@ module.exports = {
     let orderTerm = [];
 
     const invoiceSearch = {
-      [Op.and]: [
-        {
-          invoiceDate: {
-            [Op.between]: [fromDate, toDate]
-          },
-        }],
-      [Op.or]: [
-        {
-          '$customer.full_name$': {
-            [Op.substring]: search,
-          },
-        },
-      ],
+      invoiceDate: {
+        [Op.between]: [fromDate, toDate]
+      },
+      '$customer.full_name$': {
+        [Op.substring]: search,
+      },
     };
 
     if (column && direction) {
@@ -115,10 +108,6 @@ module.exports = {
 
     const invoiceList = await Invoice.findAll({
       where: invoiceSearch,
-      offset: limit * (page - 1),
-      limit: limit,
-      order: orderTerm,
-      subQuery: false,
       include: [
         {
           model: Customer,
@@ -126,24 +115,9 @@ module.exports = {
           attributes: ['id', 'fullName', 'commission'],
           required: true,
         },
-        // {
-        //   model: InvoiceDetail,
-        //   as: 'invoiceDetails',
-        //   required: true,
-        //   include: [
-        //     {
-        //       model: Item,
-        //       as: 'item',
-        //       attributes: ['id', 'itemName'],
-        //     },
-        //     {
-        //       model: Vendor,
-        //       as: 'vendor',
-        //       attributes: ['id', 'vendorName'],
-        //     },
-        //   ]
-        // }
       ],
+      offset: limit * (page - 1),
+      limit: limit,
     })
       .catch((err) => {
         console.log(err);

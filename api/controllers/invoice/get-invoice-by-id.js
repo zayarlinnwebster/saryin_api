@@ -60,7 +60,7 @@ module.exports = {
             {
               model: StockItem,
               as: 'stockItem',
-              attributes: ['storedDate', 'storeId']
+              attributes: ['storedDate', 'storeId', 'marLaKar']
             }
           ]
         }

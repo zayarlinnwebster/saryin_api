@@ -180,6 +180,12 @@ module.exports = {
           as: 'item',
           attributes: ['id', 'itemName'],
           required: true,
+        },
+        {
+          model: StockItem,
+          as: 'stockItem',
+          attributes: ['id', 'storedDate', 'storeId', 'marLaKar'],
+          required: false,
         }
       ]
     }).catch((err) => {

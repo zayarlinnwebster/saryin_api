@@ -146,9 +146,7 @@ module.exports = {
       return exits.serverError(err);
     });
 
-    const totalItemCount = await InvoiceDetail.count({
-      col: 'item_id',
-      distinct: true,
+    const totalItemCount = await InvoiceDetail.sum('qty', {
       where: {
         [Op.or]: [
           {

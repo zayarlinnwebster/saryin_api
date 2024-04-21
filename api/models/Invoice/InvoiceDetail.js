@@ -209,7 +209,68 @@ module.exports = {
     collate: 'utf8_general_ci',
     underscored: true,
     timestamps: false,
-    classMethods: {},
+    classMethods: {
+      async syncStoreItem(invoiceDetail, customerId, transaction) {
+        console.log(invoiceDetail);
+        const existStockItem = await StockItem.count({
+          where: {
+            invoiceDetailId: invoiceDetail.id
+          },
+          transaction
+        })
+        .catch(async (err) => {
+          throw new Error(err);
+        });
+
+        if (invoiceDetail.isStoreItem && existStockItem > 0) {
+          await StockItem.update({
+            storedDate: invoiceDetail.storedDate,
+            qty: invoiceDetail.qty,
+            weight: invoiceDetail.weight,
+            unitPrice: invoiceDetail.unitPrice,
+            marLaKar: invoiceDetail.marLaKar,
+            itemId: invoiceDetail.itemId,
+            customerId: customerId,
+            storeId: invoiceDetail.storeId,
+            totalPrice: invoiceDetail.totalPrice
+          }, {
+            where: {
+              invoiceDetailId: invoiceDetail.id
+            },
+            transaction
+          })
+          .catch((err) => {
+            throw new Error(err);
+          });
+        } else if (invoiceDetail.isStoreItem && existStockItem === 0) {
+          await StockItem.create({
+            storedDate: invoiceDetail.storedDate,
+            qty: invoiceDetail.qty,
+            weight: invoiceDetail.weight,
+            unitPrice: invoiceDetail.unitPrice,
+            marLaKar: invoiceDetail.marLaKar,
+            itemId: invoiceDetail.itemId,
+            customerId: customerId,
+            storeId: invoiceDetail.storeId,
+            invoiceDetailId: invoiceDetail.id,
+            totalPrice: invoiceDetail.totalPrice
+          }, { transaction })
+          .catch((err) => {
+            throw new Error(err);
+          });
+        } else {
+          await StockItem.destroy({
+            where: {
+              invoiceDetailId: invoiceDetail.id
+            },
+            transaction
+          })
+          .catch((err) => {
+            throw new Error(err);
+          });
+        }
+      }
+    },
     instanceMethods: {},
     hooks: {},
     scopes: {},

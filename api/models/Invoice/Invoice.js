@@ -5,7 +5,7 @@
  * @docs        :: https://sailsjs.com/docs/concepts/models-and-orm/models
  */
 
-const { DATEONLY, NOW, DECIMAL } = require('sequelize');
+const { DATEONLY, NOW, DECIMAL, BOOLEAN } = require('sequelize');
 
 module.exports = {
 
@@ -33,6 +33,11 @@ module.exports = {
           msg: 'totalAmount must be greater than or equal to 0',
         },
       }
+    },
+
+    isArchived: {
+      type: BOOLEAN,
+      defaultValue: false,
     },
 
   },
@@ -71,6 +76,11 @@ module.exports = {
       onUpdate: 'CASCADE',
     });
 
+    // Invoice.belongsToMany(ArchivedInvoice, {
+    //   through: ArchivedInvoiceInvoiceList,
+    //   foreignKey: 'invoiceId',
+    // });
+
   },
 
   options: {
@@ -81,7 +91,13 @@ module.exports = {
     timestamps: true,
     classMethods: {},
     instanceMethods: {},
-    hooks: {},
+    hooks: {
+      beforeFind: async (options) => {
+        // options.where = {
+        //   isArchived: false,
+        // };
+      }
+    },
     scopes: {},
   }
 
