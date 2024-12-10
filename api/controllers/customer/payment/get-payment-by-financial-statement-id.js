@@ -88,6 +88,7 @@ module.exports = {
         'paidAmount',
         'transactionNo',
         'paymentDate',
+        'financialStatementId'
       ],
       where: paymentSearch,
       offset: limit * (page - 1),

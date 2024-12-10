@@ -69,7 +69,7 @@ module.exports = {
 
       const amountDifference = +inputs.paidAmount - +customerPayment.paidAmount;
 
-      // If financialStatementId has changed, adjust both old and new financial statements
+      // Handle financialStatementId changes
       if (customerPayment.financialStatementId !== inputs.financialStatementId) {
         if (customerPayment.financialStatementId) {
           // Adjust the old financial statement
@@ -134,6 +134,9 @@ module.exports = {
         );
       }
 
+      // Determine isArchived status
+      const isArchived = inputs.financialStatementId ? 1 : 0;
+
       // Update the CustomerPayment record
       const updatedCustomerPayment = await customerPayment.update(
         {
@@ -144,6 +147,7 @@ module.exports = {
           customerId: inputs.customerId,
           commission: inputs.commission,
           financialStatementId: inputs.financialStatementId,
+          isArchived: isArchived,
         },
         { transaction }
       );
