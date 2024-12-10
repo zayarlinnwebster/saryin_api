@@ -48,6 +48,10 @@ module.exports = {
       defaultsTo: '',
     },
 
+    isArchived: {
+      type: 'number',
+      defaultsTo: 0, // Default to 0 (not archived)
+    },
   },
 
 
@@ -65,7 +69,7 @@ module.exports = {
 
 
   fn: async function ({
-    page, limit, search, fromDate, toDate, column, direction
+    page, limit, search, fromDate, toDate, column, direction, isArchived
   }, exits) {
 
     search = search.trim() || '';
@@ -77,6 +81,7 @@ module.exports = {
           paymentDate: {
             [Op.between]: [fromDate, toDate]
           },
+          isArchived
         },
       ],
       [Op.or]: [
@@ -118,6 +123,7 @@ module.exports = {
         'paidAmount',
         'transactionNo',
         'paymentDate',
+        'financialStatementId',
         // eslint-disable-next-line quotes
         [literal("(SELECT SUM(`CustomerPayment`.`paid_amount`) FROM `customer_payment` AS `CustomerPayment` WHERE `CustomerPayment`.`customer_id` = `customer`.`id` AND (DATE(`payment_date`) >= '" + fromDate + "' AND DATE(`payment_date`) <= '" + toDate + "'))"), 'totalPaidAmount'],
         // eslint-disable-next-line quotes

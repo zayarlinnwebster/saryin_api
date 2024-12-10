@@ -114,10 +114,15 @@ module.exports = {
       onUpdate: 'CASCADE',
     });
 
-    // CustomerPayment.belongsToMany(ArchivedInvoice, {
-    //   through: ArchivedInvoicePaymentList,
-    //   foreignKey: 'customerPaymentId',
-    // });
+    CustomerPayment.belongsTo(FinancialStatement, {
+      as: 'financialStatement',
+      foreignKey: {
+        name: 'financialStatementId',
+        allowNull: true,
+      },
+      onDelete: 'SET NULL',
+      onUpdate: 'CASCADE',
+    });
 
   },
 

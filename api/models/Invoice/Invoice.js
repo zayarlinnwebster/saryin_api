@@ -72,14 +72,19 @@ module.exports = {
           },
         }
       },
-      onDelete: 'CASCADE',
+      onDelete: 'RESTRICT',
       onUpdate: 'CASCADE',
     });
 
-    // Invoice.belongsToMany(ArchivedInvoice, {
-    //   through: ArchivedInvoiceInvoiceList,
-    //   foreignKey: 'invoiceId',
-    // });
+    Invoice.belongsTo(FinancialStatement, {
+      as: 'financialStatement',
+      foreignKey: {
+        name: 'financialStatementId',
+        allowNull: true,
+      },
+      onDelete: 'SET NULL',
+      onUpdate: 'CASCADE',
+    });
 
   },
 
@@ -91,13 +96,7 @@ module.exports = {
     timestamps: true,
     classMethods: {},
     instanceMethods: {},
-    hooks: {
-      beforeFind: async (options) => {
-        // options.where = {
-        //   isArchived: false,
-        // };
-      }
-    },
+    hooks: {},
     scopes: {},
   }
 

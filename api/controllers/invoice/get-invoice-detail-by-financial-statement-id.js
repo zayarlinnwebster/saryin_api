@@ -1,9 +1,9 @@
-const { Op } = require('sequelize');
+const { Op } = require("sequelize");
 
 module.exports = {
 
 
-  friendlyName: 'Get invoice by vendor id',
+  friendlyName: 'Get invoice detail by financial statement id',
 
 
   description: '',
@@ -14,11 +14,6 @@ module.exports = {
     id: {
       type: 'number',
       required: true,
-    },
-
-    search: {
-      type: 'string',
-      allowNull: true,
     },
 
     page: {
@@ -33,14 +28,9 @@ module.exports = {
       min: 1,
     },
 
-    fromDate: {
-      type: 'ref',
-      required: true,
-    },
-
-    toDate: {
-      type: 'ref',
-      required: true,
+    search: {
+      type: 'string',
+      defaultsTo: '',
     },
 
     column: {
@@ -70,28 +60,21 @@ module.exports = {
 
 
   fn: async function ({
-    id, search, page, limit, fromDate, toDate, column, direction
+    id, page, limit, search, column, direction
   }, exits) {
+
     search = search.trim() || '';
     let orderTerm = [];
 
     const invoiceDetailSearch = {
       [Op.and]: [
         {
-          '$invoice.invoice_date$': {
-            [Op.between]: [fromDate, toDate]
-          },
+          '$invoice.financial_statement_id$': id
         },
-        {
-          '$invoice.is_archived$': 0,
-        },
-        {
-          vendorId: id
-        }
       ],
       [Op.or]: [
         {
-          '$invoice.customer.full_name$': {
+          '$vendor.vendor_name$': {
             [Op.substring]: search,
           },
         },
@@ -99,10 +82,9 @@ module.exports = {
     };
 
     if (column && direction && column !== 'paymentDate') {
-      if (column.indexOf('customer') !== -1) {
+      if (column.indexOf('vendor') !== -1) {
         orderTerm = [[
-          { model: Invoice, as: 'invoice' },
-          { model: Customer, as: 'customer' },
+          { model: Vendor, as: 'vendor' },
           column.substr(column.indexOf('.') + 1), direction.toUpperCase()
         ]];
       } else if (column.indexOf('invoice') !== -1) {
@@ -120,7 +102,7 @@ module.exports = {
       }
     }
 
-    const invoiceCount = await InvoiceDetail.count({
+    const invoiceDetailCount = await InvoiceDetail.count({
       where: invoiceDetailSearch,
       include: [
         {
@@ -146,7 +128,7 @@ module.exports = {
           as: 'item',
           attributes: ['id', 'itemName'],
           required: true,
-        },
+        }
       ]
     }).catch((err) => {
       console.log(err);
@@ -187,7 +169,8 @@ module.exports = {
         {
           model: StockItem,
           as: 'stockItem',
-          attributes: ['storedDate', 'storeId', 'marLaKar']
+          attributes: ['id', 'storedDate', 'storeId', 'marLaKar'],
+          required: false,
         }
       ]
     }).catch((err) => {
@@ -196,11 +179,10 @@ module.exports = {
     });
 
     return exits.success({
-      totalCounts: invoiceCount,
+      totalCounts: invoiceDetailCount,
       data: invoiceDetailList,
     });
 
   },
 
 };
-

@@ -1,9 +1,9 @@
-const { Op } = require('sequelize');
+const { Op } = require("sequelize");
 
 module.exports = {
 
 
-  friendlyName: 'Get invoice',
+  friendlyName: 'Get financial statement',
 
 
   description: '',
@@ -28,16 +28,6 @@ module.exports = {
       defaultsTo: '',
     },
 
-    fromDate: {
-      type: 'ref',
-      required: true,
-    },
-
-    toDate: {
-      type: 'ref',
-      required: true,
-    },
-
     column: {
       type: 'string',
       defaultsTo: '',
@@ -46,11 +36,6 @@ module.exports = {
     direction: {
       type: 'string',
       defaultsTo: '',
-    },
-
-    isArchived: {
-      type: 'number',
-      defaultsTo: 0, // Default to 0 (not archived)
     },
 
   },
@@ -70,20 +55,16 @@ module.exports = {
 
 
   fn: async function ({
-    page, limit, search, fromDate, toDate, column, direction, isArchived
+    page, limit, search, column, direction
   }, exits) {
 
     search = search.trim() || '';
     let orderTerm = [];
 
-    const invoiceSearch = {
-      invoiceDate: {
-        [Op.between]: [fromDate, toDate]
-      },
+    const financialStatementSearch = {
       '$customer.full_name$': {
         [Op.substring]: search,
       },
-      isArchived
     };
 
     if (column && direction) {
@@ -97,8 +78,8 @@ module.exports = {
       }
     }
 
-    const invoiceCount = await Invoice.count({
-      where: invoiceSearch,
+    const financialStatementCount = await FinancialStatement.count({
+      where: financialStatementSearch,
       include: [
         {
           model: Customer,
@@ -112,8 +93,8 @@ module.exports = {
       return exits.serverError(err);
     });
 
-    const invoiceList = await Invoice.findAll({
-      where: invoiceSearch,
+    const financialStatementList = await FinancialStatement.findAll({
+      where: financialStatementSearch,
       include: [
         {
           model: Customer,
@@ -130,19 +111,11 @@ module.exports = {
         return exits.serverError(err);
       });
 
-    const totalInvoiceAmount = invoiceList.reduce(
-      (accumulator, currentValue) => accumulator + Number(currentValue.totalAmount), 0);
-
     return exits.success({
-      totalCounts: invoiceCount,
-      data: invoiceList,
-      totalAmount: {
-        totalInvoiceAmount,
-      }
+      totalCounts: financialStatementCount,
+      data: financialStatementList,
     });
 
   },
 
 };
-
-

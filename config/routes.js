@@ -59,6 +59,9 @@ module.exports.routes = {
   'GET /api/v1/dropdown/vendor': {
     action: 'dropdown/get-vendor'
   },
+  'GET /api/v1/dropdown/financial-statement': {
+    action: 'dropdown/get-financial-statement'
+  },
 
   // Item Routes
   'POST /api/v1/item/': {
@@ -260,5 +263,28 @@ module.exports.routes = {
   },
   'DELETE /api/v1/vendor/payment/:id': {
     action: 'vendor/payment/delete-payment'
+  },
+
+  //Financial Statement Routes
+  'POST /api/v1/financial-statement/': {
+    action: 'financial-statement/create-financial-statement'
+  },
+  'GET /api/v1/financial-statement/': {
+    action: 'financial-statement/get-financial-statement'
+  },
+  'GET /api/v1/financial-statement/:id': {
+    action: 'financial-statement/get-financial-statement-by-id'
+  },
+  'GET /api/v1/financial-statement/:id/invoice-detail': {
+    action: 'invoice/get-invoice-detail-by-financial-statement-id'
+  },
+  'GET /api/v1/financial-statement/:id/customer-payment': {
+    action: 'customer/payment/get-payment-by-financial-statement-id'
+  },
+  'PUT /api/v1/financial-statement/:id': {
+    action: 'financial-statement/update-financial-statement'
+  },
+  'DELETE /api/v1/financial-statement/:id': {
+    action: 'financial-statement/delete-financial-statement'
   },
 };

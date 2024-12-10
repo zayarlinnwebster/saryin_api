@@ -77,7 +77,11 @@ module.exports = {
           '$invoice.invoice_date$': {
             [Op.between]: [fromDate, toDate]
           },
-        }],
+        },
+        {
+          '$invoice.is_archived$': 0,
+        }
+      ],
       [Op.or]: [
         {
           '$invoice.customer.full_name$': {

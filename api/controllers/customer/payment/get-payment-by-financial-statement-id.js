@@ -1,9 +1,9 @@
-const { Op, literal } = require('sequelize');
+const { Op } = require("sequelize");
 
 module.exports = {
 
 
-  friendlyName: 'Get payment by customer id',
+  friendlyName: 'Get payment by financial statement id',
 
 
   description: '',
@@ -28,14 +28,9 @@ module.exports = {
       min: 1,
     },
 
-    fromDate: {
-      type: 'ref',
-      required: true,
-    },
-
-    toDate: {
-      type: 'ref',
-      required: true,
+    search: {
+      type: 'string',
+      defaultsTo: '',
     },
 
     column: {
@@ -46,11 +41,6 @@ module.exports = {
     direction: {
       type: 'string',
       defaultsTo: '',
-    },
-
-    isArchived: {
-      type: 'number',
-      defaultsTo: 0, // Default to 0 (not archived)
     },
 
   },
@@ -70,19 +60,16 @@ module.exports = {
 
 
   fn: async function ({
-    id, page, limit, fromDate, toDate, column, direction, isArchived
+    id, page, limit, search, column, direction
   }, exits) {
-    let orderTerm = [];
 
+    search = search.trim() || '';
+    let orderTerm = [];
     const paymentSearch = {
-      paymentDate: {
-        [Op.between]: [fromDate, toDate]
-      },
-      customerId: id,
-      isArchived,
+      financialStatementId: id,
     };
 
-    if (column && direction && column !== 'invoiceDate' && column !== 'vendor.vendorName') {
+    if (column && direction && column !== 'invoiceDate') {
       orderTerm = [[column, direction.toUpperCase()]];
     }
 
@@ -101,22 +88,12 @@ module.exports = {
         'paidAmount',
         'transactionNo',
         'paymentDate',
-        [literal('(SELECT SUM(`CustomerPayment`.`paid_amount`) FROM `customer_payment` AS `CustomerPayment` WHERE `CustomerPayment`.`customer_id` = `customer`.`id` AND (DATE(`payment_date`) >= \'' + fromDate + '\' AND DATE(`payment_date`) <= \'' + toDate + '\'))'), 'totalPaidAmount'],
-        [literal('(SELECT SUM(`InvoiceDetail`.`total_price`) FROM `invoice` AS `Invoice` INNER JOIN `invoice_detail` as `InvoiceDetail` ON `Invoice`.`id` = `InvoiceDetail`.`invoice_id` WHERE `Invoice`.`customer_id` = `customer`.`id` AND (DATE(`Invoice`.`invoice_date`) >= \'' + fromDate + '\' AND DATE(`Invoice`.`invoice_date`) <= \'' + toDate + '\'))'), 'totalInvoiceAmount'],
       ],
       where: paymentSearch,
       offset: limit * (page - 1),
       limit: limit,
       subQuery: false,
       order: orderTerm,
-      include: [
-        {
-          model: Customer,
-          as: 'customer',
-          attributes: ['id', 'fullName', 'commission'],
-          required: true,
-        },
-      ],
     }).catch((err) => {
       console.log(err);
       return exits.serverError(err);
@@ -134,4 +111,3 @@ module.exports = {
   },
 
 };
-

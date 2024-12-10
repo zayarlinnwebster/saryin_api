@@ -170,7 +170,7 @@ module.exports = {
     StockItem.belongsTo(InvoiceDetail, {
       as: 'invoiceDetail',
       foreignKey: 'invoiceDetailId',
-      onDelete: 'SET NULL',
+      onDelete: 'RESTRICT',
       onUpdate: 'CASCADE',
     });
 

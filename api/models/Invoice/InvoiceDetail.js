@@ -158,7 +158,7 @@ module.exports = {
           },
         }
       },
-      onDelete: 'CASCADE',
+      onDelete: 'RESTRICT',
       onUpdate: 'CASCADE',
     });
 
@@ -197,7 +197,7 @@ module.exports = {
     InvoiceDetail.hasOne(StockItem, {
       as: 'stockItem',
       foreignKey: 'invoiceDetailId',
-      onDelete: 'CASCADE',
+      onDelete: 'RESTRICT',
       onUpdate: 'CASCADE',
     });
 
@@ -218,9 +218,9 @@ module.exports = {
           },
           transaction
         })
-        .catch(async (err) => {
-          throw new Error(err);
-        });
+          .catch(async (err) => {
+            throw new Error(err);
+          });
 
         if (invoiceDetail.isStoreItem && existStockItem > 0) {
           await StockItem.update({
@@ -239,9 +239,9 @@ module.exports = {
             },
             transaction
           })
-          .catch((err) => {
-            throw new Error(err);
-          });
+            .catch((err) => {
+              throw new Error(err);
+            });
         } else if (invoiceDetail.isStoreItem && existStockItem === 0) {
           await StockItem.create({
             storedDate: invoiceDetail.storedDate,
@@ -255,9 +255,9 @@ module.exports = {
             invoiceDetailId: invoiceDetail.id,
             totalPrice: invoiceDetail.totalPrice
           }, { transaction })
-          .catch((err) => {
-            throw new Error(err);
-          });
+            .catch((err) => {
+              throw new Error(err);
+            });
         } else {
           await StockItem.destroy({
             where: {
@@ -265,9 +265,9 @@ module.exports = {
             },
             transaction
           })
-          .catch((err) => {
-            throw new Error(err);
-          });
+            .catch((err) => {
+              throw new Error(err);
+            });
         }
       }
     },

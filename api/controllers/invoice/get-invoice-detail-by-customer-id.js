@@ -85,6 +85,9 @@ module.exports = {
         },
         {
           '$invoice.customer_id$': id
+        },
+        {
+          '$invoice.is_archived$': 0
         }
       ],
       [Op.or]: [
@@ -193,9 +196,13 @@ module.exports = {
       return exits.serverError(err);
     });
 
+    const totalAmount = invoiceDetailList.reduce(
+      (accumulator, currentValue) => accumulator + Number(currentValue.totalPrice), 0);
+
     return exits.success({
       totalCounts: invoiceDetailCount,
       data: invoiceDetailList,
+      totalAmount,
     });
 
   },
