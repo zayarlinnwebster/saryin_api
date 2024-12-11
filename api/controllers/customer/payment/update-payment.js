@@ -24,10 +24,6 @@ module.exports = {
       type: 'string',
       allowNull: true,
     },
-    customerId: {
-      type: 'number',
-      required: true,
-    },
     commission: {
       type: 'number',
       required: true,

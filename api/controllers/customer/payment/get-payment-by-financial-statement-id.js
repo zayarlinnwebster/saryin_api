@@ -95,6 +95,13 @@ module.exports = {
       limit: limit,
       subQuery: false,
       order: orderTerm,
+      include: [
+        {
+          model: Customer,
+          as: 'customer',
+          attributes: ['id', 'fullName', 'commission'],
+        },
+      ]
     }).catch((err) => {
       console.log(err);
       return exits.serverError(err);

@@ -281,9 +281,6 @@ module.exports.routes = {
   'GET /api/v1/financial-statement/:id/customer-payment': {
     action: 'customer/payment/get-payment-by-financial-statement-id'
   },
-  'PUT /api/v1/financial-statement/:id': {
-    action: 'financial-statement/update-financial-statement'
-  },
   'DELETE /api/v1/financial-statement/:id': {
     action: 'financial-statement/delete-financial-statement'
   },

@@ -86,6 +86,7 @@ module.exports = {
           }
         }
       ],
+      limit: 20,
       group: ['Item.id'],
       order: [['totalWeight', 'DESC']]
     }).catch((err) => {
@@ -98,12 +99,12 @@ module.exports = {
 
     data.push({
       name: 'အရေအတွက်',
-      data: itemList.map(item => item.dataValues.totalQty)
+      data: itemList.map(item => parseInt(item.dataValues.totalQty))
     });
 
     data.push({
       name: 'အလေးချိန်',
-      data: itemList.map(item => item.dataValues.totalWeight)
+      data: itemList.map(item => parseInt(item.dataValues.totalWeight))
     });
 
     return exits.success({ labels, data });

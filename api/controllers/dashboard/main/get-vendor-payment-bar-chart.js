@@ -63,6 +63,7 @@ module.exports = {
           },
         ],
       },
+      limit: 20,
       order: [['totalInvoiceAmount', 'DESC']]
     }).catch((err) => {
       console.log(err);
