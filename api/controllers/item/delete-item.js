@@ -1,16 +1,16 @@
 module.exports = {
 
 
-  friendlyName: 'Delete item',
+  friendlyName: "Delete item",
 
 
-  description: '',
+  description: "",
 
 
   inputs: {
 
     id: {
-      type: 'number',
+      type: "number",
       required: true,
     }
 
@@ -24,15 +24,15 @@ module.exports = {
     },
 
     invalid: {
-      responseType: 'badRequest',
+      responseType: "badRequest",
     },
 
     invalidValidation: {
-      responseType: 'invalidValidation',
+      responseType: "invalidValidation",
     },
 
     serverError: {
-      responseType: 'serverError',
+      responseType: "serverError",
     }
 
   },
@@ -51,11 +51,11 @@ module.exports = {
 
     if (isDestroy) {
       return exits.success({
-        message: 'Item deleted successfully'
+        message: "Item deleted successfully"
       });
     } else {
       return exits.invalid({
-        message: 'Item not found'
+        message: "Item not found"
       });
     }
 

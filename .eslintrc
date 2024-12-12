@@ -76,7 +76,7 @@
     "no-use-before-define":         ["error", {"functions":false}],
     "one-var":                      ["warn", "never"],
     "prefer-arrow-callback":        ["warn", {"allowNamedFunctions":true}],
-    "quotes":                       ["warn", "single", {"avoidEscape":false, "allowTemplateLiterals":true}],
+    "quotes":                       ["warn", "double", {"avoidEscape":false, "allowTemplateLiterals":true}],
     "semi":                         ["warn", "always"],
     "semi-spacing":                 ["warn", {"before":false, "after":true}],
     "semi-style":                   ["warn", "last"]

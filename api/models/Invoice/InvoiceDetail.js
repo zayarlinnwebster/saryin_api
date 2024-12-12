@@ -5,29 +5,27 @@
  * @docs        :: https://sailsjs.com/docs/concepts/models-and-orm/models
  */
 
-const { INTEGER, DECIMAL, BOOLEAN, TEXT } = require('sequelize');
+const { INTEGER, DECIMAL, BOOLEAN, TEXT } = require("sequelize");
 
 module.exports = {
-
   attributes: {
-
     qty: {
       type: INTEGER,
       allowNull: false,
       validate: {
         notEmpty: {
           args: true,
-          msg: 'qty cannot be empty'
+          msg: "qty cannot be empty",
         },
         notNull: {
           args: true,
-          msg: 'qty must be required'
+          msg: "qty must be required",
         },
         min: {
           args: [0],
-          msg: 'qty must be greater than or equal to 0',
+          msg: "qty must be greater than or equal to 0",
         },
-      }
+      },
     },
 
     weight: {
@@ -36,13 +34,13 @@ module.exports = {
       validate: {
         notEmpty: {
           args: true,
-          msg: 'weight cannot be empty'
+          msg: "weight cannot be empty",
         },
         notNull: {
           args: true,
-          msg: 'weight must be required'
-        }
-      }
+          msg: "weight must be required",
+        },
+      },
     },
 
     unitPrice: {
@@ -51,17 +49,17 @@ module.exports = {
       validate: {
         notEmpty: {
           args: true,
-          msg: 'unitPrice cannot be empty'
+          msg: "unitPrice cannot be empty",
         },
         notNull: {
           args: true,
-          msg: 'unitPrice must be required'
+          msg: "unitPrice must be required",
         },
         min: {
           args: [0],
-          msg: 'unitPrice must be greater than or equal to 0',
+          msg: "unitPrice must be greater than or equal to 0",
         },
-      }
+      },
     },
 
     totalPrice: {
@@ -70,17 +68,17 @@ module.exports = {
       validate: {
         notEmpty: {
           args: true,
-          msg: 'totalPrice cannot be empty'
+          msg: "totalPrice cannot be empty",
         },
         notNull: {
           args: true,
-          msg: 'totalPrice must be required'
+          msg: "totalPrice must be required",
         },
         min: {
           args: [0],
-          msg: 'totalPrice must be greater than or equal to 0',
+          msg: "totalPrice must be greater than or equal to 0",
         },
-      }
+      },
     },
 
     laborFee: {
@@ -89,17 +87,17 @@ module.exports = {
       validate: {
         notEmpty: {
           args: true,
-          msg: 'laborFee cannot be empty'
+          msg: "laborFee cannot be empty",
         },
         notNull: {
           args: true,
-          msg: 'laborFee must be required'
+          msg: "laborFee must be required",
         },
         min: {
           args: [0],
-          msg: 'laborFee must be greater than or equal to 0',
+          msg: "laborFee must be greater than or equal to 0",
         },
-      }
+      },
     },
 
     generalFee: {
@@ -108,17 +106,17 @@ module.exports = {
       validate: {
         notEmpty: {
           args: true,
-          msg: 'generalFee cannot be empty'
+          msg: "generalFee cannot be empty",
         },
         notNull: {
           args: true,
-          msg: 'generalFee must be required'
+          msg: "generalFee must be required",
         },
         min: {
           args: [0],
-          msg: 'generalFee must be greater than or equal to 0',
+          msg: "generalFee must be greater than or equal to 0",
         },
-      }
+      },
     },
 
     remark: {
@@ -127,8 +125,8 @@ module.exports = {
       validate: {
         len: {
           args: [0, 65535],
-          msg: 'remark must be less than 65,535 characters'
-        }
+          msg: "remark must be less than 65,535 characters",
+        },
       },
     },
 
@@ -141,72 +139,69 @@ module.exports = {
       type: BOOLEAN,
       defaultValue: false,
     },
-
   },
 
   associations: function () {
-
     InvoiceDetail.belongsTo(Invoice, {
-      as: 'invoice',
+      as: "invoice",
       foreignKey: {
-        name: 'invoiceId',
+        name: "invoiceId",
         allowNull: false,
         validate: {
           notNull: {
             args: true,
-            msg: 'invoiceId must be required'
+            msg: "invoiceId must be required",
           },
-        }
+        },
       },
-      onDelete: 'RESTRICT',
-      onUpdate: 'CASCADE',
+      onDelete: "CASCADE",
+      onUpdate: "CASCADE",
     });
 
     InvoiceDetail.belongsTo(Vendor, {
-      as: 'vendor',
+      as: "vendor",
       foreignKey: {
-        name: 'vendorId',
+        name: "vendorId",
         allowNull: false,
         validate: {
           notNull: {
             args: true,
-            msg: 'vendorId must be required'
+            msg: "vendorId must be required",
           },
-        }
+        },
       },
-      onDelete: 'RESTRICT',
-      onUpdate: 'CASCADE',
+      onDelete: "RESTRICT",
+      onUpdate: "CASCADE",
     });
 
     InvoiceDetail.belongsTo(Item, {
-      as: 'item',
+      as: "item",
       foreignKey: {
-        name: 'itemId',
+        name: "itemId",
         allowNull: false,
         validate: {
           notNull: {
             args: true,
-            msg: 'itemId must be required'
+            msg: "itemId must be required",
           },
-        }
+        },
       },
-      onDelete: 'RESTRICT',
-      onUpdate: 'CASCADE',
+      onDelete: "RESTRICT",
+      onUpdate: "CASCADE",
     });
 
     InvoiceDetail.hasOne(StockItem, {
-      as: 'stockItem',
-      foreignKey: 'invoiceDetailId',
-      onDelete: 'RESTRICT',
-      onUpdate: 'CASCADE',
+      as: "stockItem",
+      foreignKey: "invoiceDetailId",
+      onDelete: "RESTRICT",
+      onUpdate: "CASCADE",
     });
-
   },
 
   options: {
-    tableName: 'invoice_detail',
-    charset: 'utf8',
-    collate: 'utf8_general_ci',
+    tableName: "invoice_detail",
+    charset: "utf8",
+    collate: "utf8_general_ci",
     underscored: true,
     timestamps: false,
     classMethods: {
@@ -214,67 +209,67 @@ module.exports = {
         console.log(invoiceDetail);
         const existStockItem = await StockItem.count({
           where: {
-            invoiceDetailId: invoiceDetail.id
+            invoiceDetailId: invoiceDetail.id,
           },
-          transaction
-        })
-          .catch(async (err) => {
-            throw new Error(err);
-          });
+          transaction,
+        }).catch(async (err) => {
+          throw new Error(err);
+        });
 
         if (invoiceDetail.isStoreItem && existStockItem > 0) {
-          await StockItem.update({
-            storedDate: invoiceDetail.storedDate,
-            qty: invoiceDetail.qty,
-            weight: invoiceDetail.weight,
-            unitPrice: invoiceDetail.unitPrice,
-            marLaKar: invoiceDetail.marLaKar,
-            itemId: invoiceDetail.itemId,
-            customerId: customerId,
-            storeId: invoiceDetail.storeId,
-            totalPrice: invoiceDetail.totalPrice
-          }, {
-            where: {
-              invoiceDetailId: invoiceDetail.id
+          await StockItem.update(
+            {
+              storedDate: invoiceDetail.storedDate,
+              qty: invoiceDetail.qty,
+              weight: invoiceDetail.weight,
+              unitPrice: invoiceDetail.unitPrice,
+              marLaKar: invoiceDetail.marLaKar,
+              itemId: invoiceDetail.itemId,
+              customerId: customerId,
+              storeId: invoiceDetail.storeId,
+              totalPrice: invoiceDetail.totalPrice,
             },
-            transaction
-          })
-            .catch((err) => {
-              throw new Error(err);
-            });
+            {
+              where: {
+                invoiceDetailId: invoiceDetail.id,
+              },
+              transaction,
+            }
+          ).catch((err) => {
+            throw new Error(err);
+          });
         } else if (invoiceDetail.isStoreItem && existStockItem === 0) {
-          await StockItem.create({
-            storedDate: invoiceDetail.storedDate,
-            qty: invoiceDetail.qty,
-            weight: invoiceDetail.weight,
-            unitPrice: invoiceDetail.unitPrice,
-            marLaKar: invoiceDetail.marLaKar,
-            itemId: invoiceDetail.itemId,
-            customerId: customerId,
-            storeId: invoiceDetail.storeId,
-            invoiceDetailId: invoiceDetail.id,
-            totalPrice: invoiceDetail.totalPrice
-          }, { transaction })
-            .catch((err) => {
-              throw new Error(err);
-            });
+          await StockItem.create(
+            {
+              storedDate: invoiceDetail.storedDate,
+              qty: invoiceDetail.qty,
+              weight: invoiceDetail.weight,
+              unitPrice: invoiceDetail.unitPrice,
+              marLaKar: invoiceDetail.marLaKar,
+              itemId: invoiceDetail.itemId,
+              customerId: customerId,
+              storeId: invoiceDetail.storeId,
+              invoiceDetailId: invoiceDetail.id,
+              totalPrice: invoiceDetail.totalPrice,
+            },
+            { transaction }
+          ).catch((err) => {
+            throw new Error(err);
+          });
         } else {
           await StockItem.destroy({
             where: {
-              invoiceDetailId: invoiceDetail.id
+              invoiceDetailId: invoiceDetail.id,
             },
-            transaction
-          })
-            .catch((err) => {
-              throw new Error(err);
-            });
+            transaction,
+          }).catch((err) => {
+            throw new Error(err);
+          });
         }
-      }
+      },
     },
     instanceMethods: {},
     hooks: {},
     scopes: {},
-  }
-
+  },
 };
-
